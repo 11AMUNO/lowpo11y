@@ -20,6 +20,8 @@ export interface AssetFileRow {
   height: number | null;
   model_triangle_count: number | null;
   model_vertex_count: number | null;
+  size_variant: number | null;
+  derived_from_file_id: string | null;
   metadata: Record<string, unknown>;
   is_primary: boolean;
   published: boolean;

@@ -114,3 +114,46 @@ export function merge(...parts: Geometry[]): Geometry {
     indices: count > 65535 ? new Uint32Array(indices) : new Uint16Array(indices),
   };
 }
+
+/** Truncated cone (frustum) along +Y; rTop = 0 gives a cone. */
+export function frustum(rBottom: number, rTop: number, height: number, sides = 8, cx = 0, cy = 0, cz = 0, capped = true): Geometry {
+  const b = new Builder();
+  const pt = (k: number, r: number, y: number) => {
+    const a = (k / sides) * Math.PI * 2;
+    return [cx + Math.cos(a) * r, y, cz - Math.sin(a) * r];
+  };
+  for (let k = 0; k < sides; k++) {
+    const u0 = k / sides, u1 = (k + 1) / sides;
+    if (rTop > 0) b.quad(pt(k, rBottom, cy), pt(k + 1, rBottom, cy), pt(k + 1, rTop, cy + height), pt(k, rTop, cy + height), [[u0, 0], [u1, 0], [u1, 1], [u0, 1]]);
+    else b.tri(pt(k, rBottom, cy), pt(k + 1, rBottom, cy), [cx, cy + height, cz], [[u0, 0], [u1, 0], [(u0 + u1) / 2, 1]]);
+    if (capped) {
+      if (rTop > 0) b.tri([cx, cy + height, cz], pt(k, rTop, cy + height), pt(k + 1, rTop, cy + height));
+      b.tri([cx, cy, cz], pt(k + 1, rBottom, cy), pt(k, rBottom, cy));
+    }
+  }
+  return b.build();
+}
+
+/**
+ * Extrudes a closed 2D profile (x,y pairs, counter-clockwise) along Z by `depth`,
+ * centred on z=0. Caps are fan-triangulated, so the profile must be convex or star-shaped from its first point.
+ */
+export function extrude(profile: [number, number][], depth: number, uvScale = 1): Geometry {
+  const b = new Builder();
+  const z0 = -depth / 2, z1 = depth / 2;
+  let run = 0;
+  for (let i = 0; i < profile.length; i++) {
+    const [ax, ay] = profile[i]!;
+    const [bx, by] = profile[(i + 1) % profile.length]!;
+    const len = Math.hypot(bx - ax, by - ay);
+    b.quad([ax, ay, z1], [bx, by, z1], [bx, by, z0], [ax, ay, z0], [[run / uvScale, 0], [(run + len) / uvScale, 0], [(run + len) / uvScale, depth / uvScale], [run / uvScale, depth / uvScale]]);
+    run += len;
+  }
+  const uv = ([x, y]: [number, number]) => [x / uvScale, y / uvScale];
+  for (let i = 1; i < profile.length - 1; i++) {
+    const a = profile[0]!, p = profile[i]!, q = profile[i + 1]!;
+    b.tri([a[0], a[1], z1], [p[0], p[1], z1], [q[0], q[1], z1], [uv(a), uv(p), uv(q)]);
+    b.tri([a[0], a[1], z0], [q[0], q[1], z0], [p[0], p[1], z0], [uv(a), uv(q), uv(p)]);
+  }
+  return b.build();
+}

@@ -2,6 +2,7 @@
   "name": "lowpo11y",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "LOWPO11Y — free-first asset library, browser tools and scene builder for PS1/PS2/N64-inspired and low-poly game developers.",
   "packageManager": "pnpm@10.28.0",
   "engines": {

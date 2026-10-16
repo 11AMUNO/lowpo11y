@@ -26,7 +26,7 @@ export const GET = route(async (request: Request, ctx: RouteContext<"/files/[...
     if (target.startsWith("http")) return Response.redirect(target, 308);
     return Response.redirect(await storage.signedGetUrl("public", key, { expiresInSeconds: 300 }), 302);
   }
-  const head = await storage.head("public", key);
+  const head = await storage.head("public", key).catch(() => null);
   if (!head) throw new HttpError(404, "Not found.", "not_found");
   if (request.headers.get("if-none-match") === head.etag) return new Response(null, { status: 304, headers: { ETag: head.etag! } });
   const [body, meta] = await Promise.all([storage.get("public", key), storage.meta("public", key)]);

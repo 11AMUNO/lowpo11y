@@ -56,7 +56,11 @@ export function setDbForTests(db: Db | undefined) {
  * that policies read via app.request_user_id() / app.request_role().
  */
 export async function withDb<R>(ctx: DbContext, fn: (q: Queryable) => Promise<R>): Promise<R> {
-  const db = await getDb();
+  return withDbOn(await getDb(), ctx, fn);
+}
+
+/** withDb against an explicit database handle (CLI scripts, tests). */
+export async function withDbOn<R>(db: Db, ctx: DbContext, fn: (q: Queryable) => Promise<R>): Promise<R> {
   return db.transaction(async (tx) => {
     if (ctx.kind !== "service") {
       await tx.query("select set_config('app.user_id', $1, true), set_config('app.role', $2, true)", [
@@ -84,6 +88,13 @@ export function txFor(ctx: DbContext): Tx {
   return {
     asUser: (fn) => withDb(ctx, fn),
     asService: (fn) => withDb(SERVICE, fn),
+  };
+}
+
+export function txOn(db: Db, ctx: DbContext): Tx {
+  return {
+    asUser: (fn) => withDbOn(db, ctx, fn),
+    asService: (fn) => withDbOn(db, SERVICE, fn),
   };
 }
 

@@ -3,7 +3,7 @@ import { mkdir, readFile, rm, stat, writeFile, rename } from "node:fs/promises";
 import path from "node:path";
 import { signToken } from "@/lib/auth/tokens";
 import { assertSafeKey, contentDisposition } from "./keys";
-import type { AssetStorage, Bucket, ObjectInfo, PutOptions, UploadTarget } from "./types";
+import { StorageError, type AssetStorage, type Bucket, type ObjectInfo, type PutOptions, type UploadTarget } from "./types";
 
 interface Meta {
   contentType: string;
@@ -29,6 +29,8 @@ export class LocalFilesystemStorage implements AssetStorage {
 
   private file(bucket: Bucket, key: string) {
     assertSafeKey(key);
+    // Sidecar metadata and temp files are adapter internals, never objects.
+    if (key.endsWith(".meta.json") || key.endsWith(".tmp")) throw new StorageError("Reserved storage key");
     return path.join(this.root, bucket, ...key.split("/"));
   }
 
