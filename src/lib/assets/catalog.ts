@@ -183,7 +183,7 @@ async function listItems(q: Queryable, p: CatalogParams, scope: { types?: AssetT
   if (p.q) await q.query("select set_config('pg_trgm.word_similarity_threshold', '0.5', true)");
   const { where, params } = buildWhere(p, scope);
   const order =
-    p.sort === "popular" ? "a.download_count desc, a.published_at desc" : p.sort === "name" ? "lower(a.title) asc" : "a.featured desc, a.published_at desc";
+    p.sort === "popular" ? "a.download_count desc, a.published_at desc" : p.sort === "name" ? `lower(a.title) collate "C" asc` : "a.featured desc, a.published_at desc";
   const rank = p.q ? `ts_rank(a.search_tsv, websearch_to_tsquery('english', $${params.length + 1})) + word_similarity($${params.length + 1}, a.title) desc, ` : "";
   const listParams = p.q ? [...params, p.q] : [...params];
   const [items, [count]] = await Promise.all([

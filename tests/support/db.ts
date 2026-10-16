@@ -25,7 +25,13 @@ export async function createTestDb(driver: "pglite" | "postgres" = "pglite"): Pr
   if (!adminUrl) throw new Error("TEST_DATABASE_URL is not set");
   const name = `lp_test_${randomBytes(6).toString("hex")}`;
   const admin = await createDb({ url: adminUrl, poolMax: 1 });
-  await admin.exec(`create database ${name}`);
+  // TEST_DATABASE_ICU_LOCALE=en-US mimics hosts whose default collation is linguistic (CI, Supabase).
+  const icu = process.env.TEST_DATABASE_ICU_LOCALE;
+  await admin.exec(
+    icu && /^[A-Za-z-]+$/.test(icu)
+      ? `create database ${name} template template0 encoding 'UTF8' locale_provider icu icu_locale '${icu}' locale 'C.UTF-8'`
+      : `create database ${name}`,
+  );
   const url = new URL(adminUrl);
   url.pathname = `/${name}`;
   const db = await createDb({ url: url.toString(), poolMax: 4 });

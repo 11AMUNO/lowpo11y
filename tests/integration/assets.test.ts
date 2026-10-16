@@ -120,7 +120,8 @@ describe.each(TEST_DRIVERS)("asset library (%s)", (driver) => {
     it("sorts and paginates deterministically", async () => {
       const byName = await catalog({ sort: "name" });
       const names = byName.items.map((i) => i.title.toLowerCase());
-      expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
+      // Byte order (collate "C"), so every host sorts and pages the same way.
+      expect(names).toEqual([...names].sort());
       const page2 = await catalog({ page: "2" });
       expect(page2.items).toEqual([]);
       expect(page2.pageCount).toBe(1);
