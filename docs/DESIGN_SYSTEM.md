@@ -17,7 +17,7 @@ Defined once in `src/app/globals.css` and exposed to Tailwind as `bg-*`,
 | `rule` / `rule-strong` | `#393731` / `#4f4b43` | `#c3bdb0` / `#a39d90` | Borders, dividers |
 | `fg` | `#e8e3d6` bone | `#1f1e1b` | Primary text |
 | `muted` | `#a29c8f` ash (6.4:1) | `#57534b` (5.7:1) | Secondary text |
-| `faint` | `#7a7469` | `#6f6a60` | Disabled, decorative only — never body copy |
+| `faint` | `#888276` (4.6:1) | `#645f57` (4.7:1) | Placeholders, disabled and decorative marks only — never informative text (fails on `panel`) |
 | `accent` | `#e2a03c` sodium (7.7:1) | `#8a4f05` (4.9:1) | Focus, active state, primary action |
 | `danger` | `#e0644a` tally | `#a8321d` | Errors, destructive actions only |
 | `ok` | `#8fb573` | `#3f6b2a` | Success states |
