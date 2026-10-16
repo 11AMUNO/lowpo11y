@@ -1,0 +1,233 @@
+@import "tailwindcss";
+@import "@fontsource-variable/archivo/wdth.css";
+@import "@fontsource-variable/martian-mono/wdth.css";
+
+/*
+ * LOWPO11Y design tokens.
+ * Dark "graphite workstation" is the default; light is "beige hardware".
+ * Every colour is referenced through these variables — components never
+ * hard-code hex values. See docs/DESIGN_SYSTEM.md.
+ */
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --c-bg: #1b1a18; /* graphite */
+  --c-sunken: #141311; /* canvases, wells, code */
+  --c-panel: #23221e;
+  --c-panel-2: #2b2925; /* raised / hover */
+  --c-rule: #393731;
+  --c-rule-strong: #4f4b43;
+  --c-fg: #e8e3d6; /* bone */
+  --c-muted: #a29c8f; /* ash */
+  --c-faint: #7a7469;
+  --c-accent: #e2a03c; /* sodium amber */
+  --c-accent-strong: #f0b354;
+  --c-accent-ink: #1b1a18;
+  --c-accent-soft: rgb(226 160 60 / 0.13);
+  --c-danger: #e0644a; /* tally red — errors and destructive actions only */
+  --c-danger-soft: rgb(224 100 74 / 0.14);
+  --c-ok: #8fb573;
+  --c-ok-soft: rgb(143 181 115 / 0.14);
+  --c-info: #7fb2ac; /* phosphor — measured technical data, wireframes */
+  --c-info-soft: rgb(127 178 172 / 0.13);
+  --c-checker-a: #2a2824;
+  --c-checker-b: #34312c;
+  --c-scrim: rgb(10 9 8 / 0.72);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --c-bg: #e3dfd5; /* beige hardware plastic */
+  --c-sunken: #d6d1c5;
+  --c-panel: #ebe7de;
+  --c-panel-2: #f2efe8;
+  --c-rule: #c3bdb0;
+  --c-rule-strong: #a39d90;
+  --c-fg: #1f1e1b;
+  --c-muted: #57534b;
+  --c-faint: #6f6a60;
+  --c-accent: #8a4f05;
+  --c-accent-strong: #6f3f03;
+  --c-accent-ink: #fff8ec;
+  --c-accent-soft: rgb(138 79 5 / 0.12);
+  --c-danger: #a8321d;
+  --c-danger-soft: rgb(168 50 29 / 0.1);
+  --c-ok: #3f6b2a;
+  --c-ok-soft: rgb(63 107 42 / 0.12);
+  --c-info: #2f6b66;
+  --c-info-soft: rgb(47 107 102 / 0.1);
+  --c-checker-a: #d9d4c9;
+  --c-checker-b: #c9c3b6;
+  --c-scrim: rgb(31 30 27 / 0.55);
+}
+
+@theme inline {
+  --color-bg: var(--c-bg);
+  --color-sunken: var(--c-sunken);
+  --color-panel: var(--c-panel);
+  --color-panel-2: var(--c-panel-2);
+  --color-rule: var(--c-rule);
+  --color-rule-strong: var(--c-rule-strong);
+  --color-fg: var(--c-fg);
+  --color-muted: var(--c-muted);
+  --color-faint: var(--c-faint);
+  --color-accent: var(--c-accent);
+  --color-accent-strong: var(--c-accent-strong);
+  --color-accent-ink: var(--c-accent-ink);
+  --color-accent-soft: var(--c-accent-soft);
+  --color-danger: var(--c-danger);
+  --color-danger-soft: var(--c-danger-soft);
+  --color-ok: var(--c-ok);
+  --color-ok-soft: var(--c-ok-soft);
+  --color-info: var(--c-info);
+  --color-info-soft: var(--c-info-soft);
+  --color-scrim: var(--c-scrim);
+
+  --font-sans: "Archivo Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Martian Mono Variable", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --radius-xs: 2px;
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+}
+
+/*
+ * Type scale (classic 12/14/16/18/21/24/36/48/72). Headings use Archivo's width
+ * axis — expanded, like an equipment nameplate — rather than a second family.
+ */
+@utility type-display-xl {
+  font-size: clamp(2.5rem, 4.2vw + 1rem, 4.5rem);
+  line-height: 0.98;
+  font-stretch: 125%;
+  font-weight: 800;
+  letter-spacing: -0.012em;
+}
+@utility type-display {
+  font-size: clamp(2rem, 2vw + 1.1rem, 3rem);
+  line-height: 1.03;
+  font-stretch: 122%;
+  font-weight: 760;
+  letter-spacing: -0.008em;
+}
+@utility type-title {
+  font-size: 1.5rem;
+  line-height: 1.18;
+  font-stretch: 116%;
+  font-weight: 700;
+}
+@utility type-heading {
+  font-size: 1.3125rem;
+  line-height: 1.24;
+  font-stretch: 110%;
+  font-weight: 650;
+}
+@utility type-subheading {
+  font-size: 1.125rem;
+  line-height: 1.35;
+  font-stretch: 104%;
+  font-weight: 600;
+}
+@utility type-label {
+  font-size: 0.875rem;
+  line-height: 1.3;
+  font-weight: 560;
+}
+@utility type-small {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+@utility type-data {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.45;
+  font-stretch: 88%;
+  font-variant-numeric: tabular-nums;
+}
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Transparent-pixel checkerboard used behind every image with alpha. */
+@utility bg-checker {
+  background-color: var(--c-checker-a);
+  background-image:
+    linear-gradient(45deg, var(--c-checker-b) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--c-checker-b) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--c-checker-b) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--c-checker-b) 75%);
+  background-size: 16px 16px;
+  background-position:
+    0 0,
+    0 8px,
+    8px -8px,
+    -8px 0;
+}
+
+/* Crisp nearest-neighbour scaling for pixel textures. */
+@utility pixelated {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+@layer base {
+  html {
+    background: var(--c-bg);
+    color: var(--c-fg);
+    font-family: var(--font-sans);
+    font-stretch: 100%;
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    background: var(--c-bg);
+    color: var(--c-fg);
+    font-size: 1rem;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  ::selection {
+    background: var(--c-accent);
+    color: var(--c-accent-ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--c-accent-strong);
+    outline-offset: 2px;
+  }
+  /* Radix and native controls inherit our focus ring. */
+  [data-radix-collection-item]:focus-visible {
+    outline-offset: -2px;
+  }
+  a {
+    text-underline-offset: 0.18em;
+    text-decoration-thickness: 1px;
+  }
+  hr {
+    border-color: var(--c-rule);
+  }
+  code,
+  kbd,
+  pre,
+  samp {
+    font-family: var(--font-mono);
+    font-stretch: 92%;
+  }
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
