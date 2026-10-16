@@ -28,5 +28,7 @@ export default defineConfig([
     "coverage/**",
     "test-results/**",
     "playwright-report/**",
+    // Owner-supplied reference implementation, kept byte-for-byte (see vendor/11am-seamless/PROVENANCE.md).
+    "vendor/**",
   ]),
 ]);

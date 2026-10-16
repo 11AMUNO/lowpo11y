@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>11AM-Seamless</title>
+<meta name="color-scheme" content="dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-head">
+<pre class="banner" role="img" aria-label="11AM-SEAMLESS">
+ ██╗ ██╗ █████╗ ███╗   ███╗      ███████╗███████╗ █████╗ ███╗   ███╗██╗     ███████╗███████╗███████╗
+███║███║██╔══██╗████╗ ████║      ██╔════╝██╔════╝██╔══██╗████╗ ████║██║     ██╔════╝██╔════╝██╔════╝
+╚██║╚██║███████║██╔████╔██║█████╗███████╗█████╗  ███████║██╔████╔██║██║     █████╗  ███████╗███████╗
+ ██║ ██║██╔══██║██║╚██╔╝██║╚════╝╚════██║██╔══╝  ██╔══██║██║╚██╔╝██║██║     ██╔══╝  ╚════██║╚════██║
+ ██║ ██║██║  ██║██║ ╚═╝ ██║      ███████║███████╗██║  ██║██║ ╚═╝ ██║███████╗███████╗███████║███████║
+ ╚═╝ ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝      ╚══════╝╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚══════╝╚══════╝╚══════╝</pre>
+<p class="telemetry">&gt; <b>TEXTURE TILING TERMINAL</b> // v2.0 // LOCAL MODE // FILES NEVER LEAVE THIS MACHINE<span class="cursor" aria-hidden="true"></span></p>
+<ul class="stats">
+  <li>COLLECTIONS: <strong id="st-cols">0</strong></li>
+  <li>FILES: <strong id="st-files">0</strong></li>
+  <li>CUSTOMISED: <strong id="st-custom">0</strong></li>
+  <li>ACTIVE: <strong id="st-active">NONE</strong></li>
+</ul>
+</header>
+
+<div class="layout">
+  <!-- ============ LIBRARY ============ -->
+  <section class="panel library" aria-label="Library">
+    <h2 class="panel-title">// LIBRARY</h2>
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Add files or folders">
+      <span class="drop-big">[ DROP FOLDERS OR FILES ]</span>
+      <span class="drop-small">each folder becomes a collection</span>
+      <span class="drop-btns">
+        <button class="tbtn" id="btn-add-folder" type="button">+ FOLDER</button>
+        <button class="tbtn" id="btn-add-files" type="button">+ FILES</button>
+      </span>
+      <input id="in-files" type="file" accept="image/*" multiple hidden>
+      <input id="in-folder" type="file" webkitdirectory directory multiple hidden>
+    </div>
+    <div class="lib-tools" id="lib-tools" hidden>
+      <button class="tbtn mini" id="btn-collapse-all" type="button">COLLAPSE ALL</button>
+      <button class="tbtn mini" id="btn-expand-all" type="button">EXPAND ALL</button>
+      <button class="tbtn mini dim" id="btn-clear" type="button">CLEAR</button>
+    </div>
+    <div class="lib" id="lib"></div>
+    <p class="empty-q" id="empty-q">&gt; NO FILES LOADED_</p>
+    <p class="hint">KEYS: <code>↑</code>/<code>↓</code> select · <code>D</code> download · <code>T</code> tile/split · <code>Del</code> remove</p>
+  </section>
+
+  <!-- ============ VIEWPORT ============ -->
+  <section class="panel view" aria-label="Viewport">
+    <div class="view-bar">
+      <h2 class="panel-title">// VIEWPORT <span class="for" id="view-for"></span></h2>
+      <div class="seg" role="group" aria-label="View">
+        <button class="tbtn" data-view="split" aria-pressed="true">SPLIT</button>
+        <button class="tbtn" data-view="tile" aria-pressed="false">TILE CHECK</button>
+      </div>
+    </div>
+    <div class="view-bar sub" id="tile-bar" hidden>
+      <div class="seg" role="group" aria-label="Tile grid">
+        <button class="tbtn" data-grid="2" aria-pressed="false">2×2</button>
+        <button class="tbtn" data-grid="3" aria-pressed="true">3×3</button>
+        <button class="tbtn" data-grid="4" aria-pressed="false">4×4</button>
+        <button class="tbtn" data-grid="6" aria-pressed="false">6×6</button>
+      </div>
+      <div class="seg" role="group" aria-label="Tile source">
+        <button class="tbtn" data-tsrc="result" aria-pressed="true">RESULT</button>
+        <button class="tbtn" data-tsrc="source" aria-pressed="false">SOURCE</button>
+      </div>
+      <button class="tbtn" id="tg-seams" aria-pressed="false">SEAM LINES</button>
+      <button class="tbtn" id="tg-recenter">RECENTER</button>
+    </div>
+    <div class="screen" id="screen">
+      <canvas id="cv"></canvas>
+      <div class="screen-empty" id="screen-empty">
+<pre>┌────────────────────────────────────┐
+│  NO SIGNAL                         │
+│  &gt; drop a texture folder_          │
+└────────────────────────────────────┘</pre>
+      </div>
+      <span class="corner tl" id="lbl-l">SOURCE</span>
+      <span class="corner tr" id="lbl-r">RESULT</span>
+      <div class="divider" id="divider"><span>◀▶</span></div>
+    </div>
+    <div class="view-bar foot">
+      <span class="readout" id="readout">&gt; IDLE</span>
+      <button class="tbtn" id="tg-pixel" aria-pressed="false">PIXELATED</button>
+    </div>
+  </section>
+
+  <!-- ============ SETTINGS ============ -->
+  <aside class="side">
+    <section class="panel editing" aria-label="Editing">
+      <h2 class="panel-title">// EDITING</h2>
+      <div class="ed-target" id="ed-target">
+        <span class="ed-none">&gt; select a file in the library</span>
+      </div>
+      <span class="lbl ed-lbl">COPY THESE SETTINGS TO</span>
+      <div class="ed-apply">
+        <button class="tbtn" id="btn-apply-col" title="Copy this file's settings to every file in its collection">COLLECTION</button>
+        <button class="tbtn" id="btn-apply-all" title="Copy this file's settings to every file in the library">EVERYTHING</button>
+        <button class="tbtn dim" id="btn-reset" title="Back to default settings for this file">RESET</button>
+      </div>
+    </section>
+
+    <section class="panel rack" aria-label="Processing pipeline">
+      <h2 class="panel-title">// PIPELINE <span class="pt-note">runs top → bottom</span></h2>
+
+      <!-- 01 SOURCE -->
+      <div class="mod" data-mod="source">
+        <div class="mod-head">
+          <button class="mod-toggle" aria-expanded="true"><span class="chev">▾</span><span class="mod-n">01</span><span class="mod-name">SOURCE</span></button>
+          <span class="mod-sum" id="sum-source"></span>
+        </div>
+        <div class="mod-body">
+          <p class="mod-desc">Resize and prep the image before anything else.</p>
+          <div class="field row2">
+            <span class="lbl">LONG SIDE</span>
+            <div class="seg full" role="group" aria-label="Long side" id="seg-size">
+              <button class="tbtn" data-size="0">ORIG</button>
+              <button class="tbtn" data-size="128">128</button>
+              <button class="tbtn" data-size="256">256</button>
+              <button class="tbtn" data-size="512">512</button>
+              <button class="tbtn" data-size="1024">1K</button>
+              <button class="tbtn" data-size="2048">2K</button>
+            </div>
+          </div>
+          <div class="field row2">
+            <span class="lbl">RESAMPLE</span>
+            <div class="seg full" role="group" aria-label="Resample" id="seg-resample">
+              <button class="tbtn" data-resample="smooth">SMOOTH</button>
+              <button class="tbtn" data-resample="nearest">NEAREST</button>
+            </div>
+          </div>
+          <div class="toggles">
+            <button class="tbtn" data-bool="square" aria-pressed="false" title="Center-crop to a square first">SQUARE CROP</button>
+          </div>
+          <div class="sliders" data-box="source"></div>
+        </div>
+      </div>
+
+      <!-- 02 SEAMLESS -->
+      <div class="mod" data-mod="tile">
+        <div class="mod-head">
+          <button class="mod-toggle" aria-expanded="true"><span class="chev">▾</span><span class="mod-n">02</span><span class="mod-name">SEAMLESS</span></button>
+          <span class="mod-sum" id="sum-tile"></span>
+          <button class="sw" data-sw="tile" aria-pressed="true" title="Turn the seamless step on or off">ON</button>
+        </div>
+        <div class="mod-body">
+          <div class="field">
+            <div class="seg full" role="group" aria-label="Seam mode" id="seg-mode">
+              <button class="tbtn" data-mode="blend">BLEND</button>
+              <button class="tbtn" data-mode="mirror">MIRROR</button>
+              <button class="tbtn" data-mode="edge">EDGE</button>
+              <button class="tbtn" data-mode="offset">OFFSET</button>
+            </div>
+            <p class="mod-desc" id="mode-desc"></p>
+          </div>
+          <div class="field row2">
+            <span class="lbl">REPEAT</span>
+            <div class="seg full" role="group" aria-label="Repeat direction" id="seg-dir">
+              <button class="tbtn" data-dir="both">X + Y</button>
+              <button class="tbtn" data-dir="x">X</button>
+              <button class="tbtn" data-dir="y">Y</button>
+            </div>
+          </div>
+          <div class="sliders" data-box="tile"></div>
+          <details class="adv" id="adv-tile">
+            <summary>ADVANCED</summary>
+            <div class="sliders" data-box="tile-adv"></div>
+            <div class="field row2" id="f-falloff">
+              <span class="lbl">FALLOFF</span>
+              <div class="seg full" role="group" aria-label="Falloff" id="seg-falloff">
+                <button class="tbtn" data-falloff="linear">LINEAR</button>
+                <button class="tbtn" data-falloff="smooth">SMOOTH</button>
+                <button class="tbtn" data-falloff="sharp">SHARP</button>
+              </div>
+            </div>
+            <div class="toggles">
+              <button class="tbtn" data-bool="pixelSafe" aria-pressed="false" title="Dithered blend that never invents new colours">PIXEL-SAFE BLEND</button>
+              <button class="tbtn" data-bool="mirrorFit" aria-pressed="false" title="Scale the 2× mirror result back to source size">MIRROR FIT 1×</button>
+              <button class="tbtn" id="btn-reseed" title="New random pattern for the organic seam">RESEED</button>
+            </div>
+          </details>
+        </div>
+      </div>
+
+      <!-- 03 BACKGROUND -->
+      <div class="mod" data-mod="key">
+        <div class="mod-head">
+          <button class="mod-toggle" aria-expanded="true"><span class="chev">▾</span><span class="mod-n">03</span><span class="mod-name">BACKGROUND</span></button>
+          <span class="mod-sum" id="sum-key"></span>
+          <button class="sw" data-sw="keyBlack" aria-pressed="false" title="Turn black background removal on or off">OFF</button>
+        </div>
+        <div class="mod-body">
+          <p class="mod-desc">Pure black → transparent. Export as PNG or WEBP.</p>
+          <div class="toggles first">
+            <button class="tbtn" data-bool="keyConnected" aria-pressed="true" title="Only remove black that touches the border, so dark detail inside the object stays">CONNECTED TO EDGE ONLY</button>
+          </div>
+          <div class="sliders" data-box="key"></div>
+          <p class="warn" id="key-warn" hidden>! JPG can't hold transparency // switch FORMAT to PNG or WEBP.</p>
+        </div>
+      </div>
+
+      <!-- 04 PSX -->
+      <div class="mod" data-mod="psx">
+        <div class="mod-head">
+          <button class="mod-toggle" aria-expanded="true"><span class="chev">▾</span><span class="mod-n">04</span><span class="mod-name">PSX EFFECTS</span></button>
+          <span class="mod-sum" id="sum-psx"></span>
+          <button class="sw" data-sw="psx" aria-pressed="false" title="Turn PSX effects on or off">OFF</button>
+        </div>
+        <div class="mod-body">
+          <p class="mod-desc">Colour limit + dither, PlayStation style.</p>
+          <div class="toggles first">
+            <button class="tbtn" data-bool="psxLimit" aria-pressed="true" title="Reduce to an adaptive palette">LIMIT COLOURS</button>
+            <button class="tbtn" data-bool="psx15" aria-pressed="false" title="Snap to the PS1's 15-bit RGB555 colour range">15-BIT RGB555</button>
+          </div>
+          <div class="sliders" data-box="psx"></div>
+          <div class="field row2">
+            <span class="lbl">DITHER</span>
+            <div class="seg full" role="group" aria-label="Dither" id="seg-dither">
+              <button class="tbtn" data-dither="none" title="No dither">NONE</button>
+              <button class="tbtn" data-dither="bayer4" title="4×4 ordered, what the PS1 used">4×4</button>
+              <button class="tbtn" data-dither="bayer8" title="8×8 ordered">8×8</button>
+              <button class="tbtn" data-dither="fs" title="Floyd-Steinberg error diffusion">F-S</button>
+            </div>
+          </div>
+          <div class="sliders" data-box="psx2"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ EXPORT ============ -->
+    <section class="panel" aria-label="Export">
+      <h2 class="panel-title">// EXPORT</h2>
+      <div class="field row2">
+        <span class="lbl">FORMAT</span>
+        <div class="seg full" role="group" aria-label="Format" id="seg-format">
+          <button class="tbtn" data-format="png" aria-pressed="true">PNG</button>
+          <button class="tbtn" data-format="jpg" aria-pressed="false">JPG</button>
+          <button class="tbtn" data-format="webp" aria-pressed="false">WEBP</button>
+        </div>
+      </div>
+      <div class="sliders" id="sliders-export"></div>
+
+      <h3 class="sub-title">THIS FILE</h3>
+      <div class="field">
+        <div class="namebox">
+          <span class="prompt-sym">&gt;</span>
+          <input id="in-name" type="text" spellcheck="false" autocomplete="off" placeholder="filename" aria-label="Filename">
+          <span class="ext" id="ext">.png</span>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="tbtn hot" id="btn-dl">[ DOWNLOAD ]</button>
+        <button class="tbtn" id="btn-sample">[ 3×3 SAMPLE ]</button>
+      </div>
+
+      <h3 class="sub-title">BATCH</h3>
+      <div class="field row2">
+        <span class="lbl">SCOPE</span>
+        <div class="seg full" role="group" aria-label="Batch scope" id="seg-scope">
+          <button class="tbtn" data-scope="collection" aria-pressed="false">COLLECTION</button>
+          <button class="tbtn" data-scope="all" aria-pressed="true">EVERYTHING</button>
+        </div>
+      </div>
+      <div class="field row2">
+        <span class="lbl">SIZES</span>
+        <div class="seg full" role="group" aria-label="Export sizes" id="seg-sizes">
+          <button class="tbtn" data-esize="1024" aria-pressed="true">1024</button>
+          <button class="tbtn" data-esize="512" aria-pressed="true">512</button>
+          <button class="tbtn" data-esize="256" aria-pressed="true">256</button>
+          <button class="tbtn" data-esize="128" aria-pressed="true">128</button>
+        </div>
+      </div>
+      <pre class="tree" id="tree" aria-label="Zip layout preview"></pre>
+      <button class="tbtn hot wide" id="btn-zip">[ EXPORT ZIP ]</button>
+
+      <details class="adv">
+        <summary>BATCH RENAME</summary>
+        <div class="field">
+          <div class="namebox">
+            <span class="prompt-sym">&gt;</span>
+            <input id="in-pattern" type="text" spellcheck="false" autocomplete="off" value="{name}" aria-label="Rename pattern">
+          </div>
+          <p class="hint">TOKENS: <code>{name}</code> original · <code>{n}</code> 01,02… · <code>{collection}</code> · <code>{mode}</code></p>
+        </div>
+        <button class="tbtn" id="btn-pattern">[ RENAME IN SCOPE ]</button>
+      </details>
+    </section>
+  </aside>
+</div>
+
+<footer class="site-foot">
+  <span>11AM-SEAMLESS // RUNS OFFLINE // NO TELEMETRY</span>
+  <span id="clock"></span>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="engine.js"></script>
+<script src="zip.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
