@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { buttonClasses } from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
 import { contextFor, requireStaffPage } from "@/lib/auth/server";
 import { getDb, withDb } from "@/lib/db";
@@ -14,6 +16,8 @@ interface Counts {
   files: number;
   bytes: number;
   missing_licence: number;
+  new_messages: number;
+  open_takedowns: number;
 }
 
 export default async function AdminDashboard() {
@@ -27,7 +31,9 @@ export default async function AdminDashboard() {
         count(*) filter (where status = 'archived' and deleted_at is null)::int as archived,
         (select count(*)::int from asset_files where deleted_at is null) as files,
         (select coalesce(sum(size_bytes), 0)::bigint from asset_files where deleted_at is null) as bytes,
-        count(*) filter (where deleted_at is null and (licence_id is null or ownership_attested_at is null))::int as missing_licence
+        count(*) filter (where deleted_at is null and (licence_id is null or ownership_attested_at is null))::int as missing_licence,
+        (select count(*)::int from contact_messages where status = 'new') as new_messages,
+        (select count(*)::int from contact_messages where kind = 'takedown' and status <> 'resolved') as open_takedowns
       from assets`);
     return c!;
   });
@@ -45,6 +51,28 @@ export default async function AdminDashboard() {
       <p className="mt-2 font-ocr text-[13px] tracking-[0.08em] text-muted uppercase">
         &gt; Signed in as {user.displayName} // {user.role}
       </p>
+      <div className="mt-5 flex flex-wrap gap-2">
+        <Link href="/admin/assets/new" className={buttonClasses("primary", "md")}>
+          [ New asset ]
+        </Link>
+        <Link href="/admin/assets?problem=licence" className={buttonClasses("secondary", "md")}>
+          Needs licence ({counts.missing_licence})
+        </Link>
+        <Link href="/admin/assets?status=review" className={buttonClasses("secondary", "md")}>
+          In review ({counts.review})
+        </Link>
+        <Link href="/admin/messages?status=new" className={buttonClasses("secondary", "md")}>
+          New messages ({counts.new_messages})
+        </Link>
+      </div>
+      {counts.open_takedowns ? (
+        <p role="status" className="mt-3 border border-bright px-3 py-2 font-ocr text-xs tracking-[0.06em] text-bright uppercase">
+          ! {counts.open_takedowns} open takedown {counts.open_takedowns === 1 ? "request" : "requests"} //{" "}
+          <Link href="/admin/messages" className="underline">
+            review now
+          </Link>
+        </p>
+      ) : null}
       <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <Panel title="Library">
           <ul>

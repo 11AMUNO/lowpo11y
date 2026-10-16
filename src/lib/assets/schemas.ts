@@ -60,6 +60,8 @@ export type AssetInput = z.infer<typeof assetInputSchema>;
 export const assetPatchSchema = assetInputSchema.partial().extend({
   /** true sets ownership_attested_at/by to now/actor; false clears it. */
   attest: z.boolean().optional(),
+  /** Editors move work between draft and review; publishing has its own endpoint. */
+  status: z.enum(["draft", "review"]).optional(),
 });
 export type AssetPatch = z.infer<typeof assetPatchSchema>;
 

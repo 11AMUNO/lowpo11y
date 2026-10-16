@@ -133,11 +133,26 @@ export async function updateAsset(q: Queryable, actorId: string, id: string, pat
     if (v !== undefined) add(`${column} = ?`, v);
   }
   if (patch.engines !== undefined) add("engines = ?::text[]", patch.engines);
-  if (patch.slug !== undefined && patch.slug) add("slug = ?", await uniqueSlug(q, patch.slug, id));
+  if (patch.status !== undefined) add("status = ?::publish_status", patch.status);
+  // Attestation covers the licence it was given under: a different licence
+  // clears it, and confirming again restamps who and when. SET expressions
+  // see the old row, so licence_id here is the current value.
+  let changed = "false";
+  if (patch.licenceId !== undefined) {
+    params.push(patch.licenceId);
+    changed = `licence_id is distinct from $${params.length}::uuid`;
+  }
   if (patch.attest === true) {
-    add("ownership_attested_at = coalesce(ownership_attested_at, now()), ownership_attested_by = coalesce(ownership_attested_by, ?::uuid)", actorId);
+    params.push(actorId);
+    const actor = `$${params.length}::uuid`;
+    sets.push(
+      `ownership_attested_at = case when ownership_attested_at is null or ${changed} then now() else ownership_attested_at end`,
+      `ownership_attested_by = case when ownership_attested_at is null or ${changed} then ${actor} else ownership_attested_by end`,
+    );
   } else if (patch.attest === false) {
     sets.push("ownership_attested_at = null, ownership_attested_by = null");
+  } else if (patch.licenceId !== undefined) {
+    sets.push(`ownership_attested_at = case when ${changed} then null else ownership_attested_at end`, `ownership_attested_by = case when ${changed} then null else ownership_attested_by end`);
   }
   let row: AssetRow | undefined;
   if (sets.length) {

@@ -26,3 +26,11 @@ export async function api<T>(path: string, init: { method?: string; body?: unkno
   }
   return data as T;
 }
+
+/** Per-field messages from an invalid_input response, keyed by the field path. */
+export function fieldErrors(err: unknown): Record<string, string> {
+  if (!(err instanceof ApiError) || err.code !== "invalid_input" || !Array.isArray(err.details)) return {};
+  const out: Record<string, string> = {};
+  for (const d of err.details as { path?: string; message?: string }[]) if (d.path && d.message && !out[d.path]) out[d.path] = d.message;
+  return out;
+}

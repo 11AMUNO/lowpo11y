@@ -29,6 +29,10 @@ export function jsonError(err: unknown): Response {
       { status: 400 },
     );
   }
+  // Row-level security refused the write: the role isn't allowed to do this.
+  if ((err as { code?: string } | null)?.code === "42501" || /row-level security/i.test((err as Error | null)?.message ?? "")) {
+    return Response.json({ error: { code: "forbidden", message: "Your role can't make this change. Ask an admin." } }, { status: 403 });
+  }
   console.error(err);
   return Response.json({ error: { code: "internal", message: "Something went wrong on the server." } }, { status: 500 });
 }
@@ -53,7 +57,12 @@ export function route<C>(fn: Handler<C>): Handler<C> {
  */
 export function assertSameOrigin(request: Request): void {
   if (["GET", "HEAD", "OPTIONS"].includes(request.method)) return;
-  const allowed = new Set([new URL(env().NEXT_PUBLIC_APP_URL).origin, new URL(request.url).origin]);
+  const url = new URL(request.url);
+  const allowed = new Set([new URL(env().NEXT_PUBLIC_APP_URL).origin, url.origin]);
+  // The Host the browser actually sent (request.url can be normalised, e.g. to localhost in dev).
+  // A cross-site request carries our Host but the other site's Origin, so it still fails.
+  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  if (host) allowed.add(`${request.headers.get("x-forwarded-proto") ?? url.protocol.replace(":", "")}://${host}`);
   const origin = request.headers.get("origin");
   const referer = request.headers.get("referer");
   const source = origin ?? (referer ? new URL(referer).origin : null);
