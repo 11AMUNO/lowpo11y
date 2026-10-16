@@ -45,13 +45,22 @@ export interface ModuleProps {
   enabled?: boolean;
   onEnabledChange?: (enabled: boolean) => void;
   defaultOpen?: boolean;
+  /** Controlled open state (e.g. remembered per browser); falls back to internal state. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   children: ReactNode;
   className?: string;
 }
 
 /** Pipeline module (Seamless `.mod`): numbered header, summary, ON/OFF, collapsible body. */
-export function Module({ n, name, summary, enabled, onEnabledChange, defaultOpen = true, children, className }: ModuleProps) {
-  const [open, setOpen] = useState(defaultOpen);
+export function Module({ n, name, summary, enabled, onEnabledChange, defaultOpen = true, open: openProp, onOpenChange, children, className }: ModuleProps) {
+  const [openState, setOpenState] = useState(defaultOpen);
+  const open = openProp ?? openState;
+  const setOpen = (fn: (o: boolean) => boolean) => {
+    const next = fn(open);
+    setOpenState(next);
+    onOpenChange?.(next);
+  };
   const off = enabled === false;
   const showBody = open && !off;
   return (

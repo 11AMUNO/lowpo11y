@@ -25,12 +25,12 @@ export const TOOLS: ToolDefinition[] = [
   {
     slug: "seamless",
     name: "Seamless texture",
-    summary: "Make any photo or texture tile cleanly with offset blending, edge feathering and a 3×3 tiling preview.",
+    summary: "Make textures tile cleanly with offset blending, mirror or edge healing, black-to-transparent and PSX palettes, then batch-export a ZIP.",
     route: "/tools/seamless",
     category: "texture",
-    status: "in-development",
+    status: "available",
     processing: "local",
-    version: "0.0.0",
+    version: "2.0.0",
   },
   {
     slug: "texture-converter",

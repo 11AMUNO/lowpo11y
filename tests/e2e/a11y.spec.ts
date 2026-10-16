@@ -5,6 +5,7 @@ import { asAdmin } from "./fixtures";
 const PAGES = [
   "/",
   "/tools",
+  "/tools/seamless",
   "/assets",
   "/assets?view=list&type=model",
   "/textures",
@@ -38,6 +39,16 @@ for (const crt of ["on", "off"] as const) {
     }
   });
 }
+
+test("seamless tool with files loaded has no WCAG A/AA violations", async ({ page }) => {
+  await page.goto("/tools/seamless");
+  await page.getByRole("button", { name: "+ Sample" }).click();
+  await expect(page.getByRole("status").filter({ hasText: /SEAM/ }).first()).toBeVisible({ timeout: 20_000 });
+  await page.getByRole("button", { name: "Enable psx effects" }).click();
+  await page.getByText("Advanced").first().click();
+  const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).exclude('[aria-hidden="true"]').analyze();
+  expect(results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
+});
 
 test.describe("accessibility (admin)", () => {
   for (const path of ["/admin", "/admin/assets", "/admin/assets/new", "/admin/import", "/admin/collections", "/admin/messages", "/admin/audit", "editor"]) {
