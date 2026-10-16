@@ -34,7 +34,7 @@ Client tools ──► src/lib/processing (pure pixel algorithms) in Web Workers
 | `src/features/*` | Feature modules (catalog, admin, tools, workshop, scene-builder) |
 | `src/lib/*` | Framework-independent modules (see ADR 0001) |
 | `supabase/migrations` | SQL schema, RLS policies and seed-safe reference data |
-| `scripts/` | migrate, seed, admin:create, ingest, e2e server |
+| `scripts/` | migrate, seed, reset, admin:create, vercel-build, e2e server |
 | `tests/unit`, `tests/integration`, `tests/e2e` | Vitest and Playwright suites |
 
 ## Request contexts and RLS
@@ -47,6 +47,19 @@ Every database call names its context:
 
 Policies allow anonymous reads of published, non-deleted rows only; staff
 writes; admin-only publishing. See ADR 0002 and `supabase/migrations`.
+
+## Upload flow
+
+```
+admin browser ──POST /api/admin/uploads──────────► create upload_session, presign PUT (private/staging/{id}/incoming)
+admin browser ──PUT bytes────────────────────────► R2 (or /api/storage/upload locally)
+admin browser ──POST /api/admin/uploads/{id}/complete
+                                                  ► head + read staged object, verify size, sha256, magic bytes,
+                                                    purpose allow-list, ZIP entries, image/model analysis
+                                                  ► copy to private assets/{assetId}/{purpose}/{fileId}.{ext}
+                                                  ► insert asset_files (RLS: staff), audit, delete staging
+publish (M03) ────────────────────────────────────► copy published files to the public bucket, build bundle ZIP
+```
 
 ## Environments
 

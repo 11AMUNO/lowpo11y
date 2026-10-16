@@ -3,7 +3,11 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   resolve: {
-    alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
+    alias: {
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
+      // Next-only guard modules are no-ops outside the Next.js bundler.
+      "server-only": fileURLToPath(new URL("./tests/support/empty.ts", import.meta.url)),
+    },
   },
   test: {
     environment: "node",

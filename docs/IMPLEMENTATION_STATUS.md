@@ -11,8 +11,8 @@ _Last updated: 2026-10-16_
 |---|---|---|
 | M00 Discovery & setup | ✅ Done | lint, typecheck, unit, build, E2E smoke all pass locally; CI workflow committed |
 | M01 Public shell & design system | ✅ Done | 25 Playwright tests incl. axe WCAG 2.2 AA on 7 pages (CRT on/off); 35 unit tests; restyled to owner's Seamless identity |
-| M02 Infrastructure (DB, RLS, auth, storage, uploads) | ⏳ Next | — |
-| M03 Asset CMS + catalogue | ⬜ Not started | — |
+| M02 Infrastructure (DB, RLS, auth, storage, uploads) | ✅ Done | 143 unit/integration tests (RLS on PGlite + Postgres 16; storage contract on local + S3); 35 E2E incl. journey 10 |
+| M03 Asset CMS + catalogue | ⏳ Next | — |
 | M04 Initial processing tools | ⬜ Not started | — |
 | M05 Advanced tools | ⬜ Not started | — |
 | M06 Resources & curated video directory | ⬜ Not started | — |
@@ -87,6 +87,75 @@ overflow at 390px, axe audits). Screenshots reviewed at 1440px and 390px.
 **Known limitations**
 - Section pages other than Tools are honest holding pages until M03/M06.
 - Legal page copy is a starting draft for the owner to review before launch.
+
+## M02 — Infrastructure
+
+**Built**
+- `src/lib/env.ts`: Zod-validated server config; local fallback secret per data dir.
+- Database (`src/lib/db`): one interface over PGlite (local) and postgres.js
+  (Supabase/Postgres); request contexts `public`/`user`/`service` enforced with
+  `SET LOCAL ROLE lp_anon|lp_authenticated` + claims; `Tx` runner so services
+  never nest transactions; migration runner with checksums.
+- Migrations (`supabase/migrations`): full data model from plan §7 (users,
+  sessions, rate limits, licences, categories, tags, creators, assets + files +
+  tags/creators/dependencies, collections, shaders, starters, tutorial
+  creators, tutorials, external resources, tools, site settings, presets,
+  download counters, audit log, upload sessions, import jobs, contact
+  messages), FTS (`tsvector` incl. tag names) + trigram, RLS policies on every
+  table, publish guards (known licence + attestation enforced in the DB),
+  reference licences/categories/tags.
+- Auth (`src/lib/auth`): scrypt passwords, opaque session tokens (hash stored),
+  HttpOnly/SameSite=Lax/Secure cookie, sliding expiry, DB rate limits, origin
+  checks, open-redirect-safe `next`, first-admin setup (token-gated on hosted
+  DBs), `pnpm admin:create`.
+- Storage (`src/lib/storage`): `AssetStorage` with private/public buckets;
+  `LocalFilesystemStorage` (HMAC-signed upload/read URLs) and `R2Storage`
+  (S3 API, presigned PUT signing content-type + content-length, single- or
+  two-bucket mode); server-built keys only; safe filenames/Content-Disposition.
+- Uploads (`src/lib/assets`): signed upload sessions → browser PUT → verify
+  (size, SHA-256, magic bytes, purpose allow-list, ZIP entry inspection, image
+  metadata via sharp, glTF stats) → file under the asset; dedupe by checksum;
+  expiry sweeper; redacted audit log.
+- Formats (`src/lib/formats`): dependency-free GLB writer, glTF validator +
+  statistics (unique vs instanced triangles, draw calls, world bounds, UV
+  channels, embedded image sizes, unsupported required extensions), image
+  header sizes, faceted primitive builders.
+- Routes: `/api/auth/{login,logout,setup}`, `/api/admin/uploads`,
+  `/api/admin/uploads/[id]/complete`, `/api/storage/{upload,object}` (local
+  only), `/files/[...key]` (public bucket only), `/api/health` (DB check).
+- Pages: `/auth/login`, `/auth/setup`, admin shell + dashboard.
+- Scripts: `db:migrate`, `db:seed`, `db:reset`, `admin:create`, `vercel-build`.
+- Docs: `.env.example`, `docs/DEPLOYMENT.md` (Supabase, R2 buckets/CORS/token,
+  Vercel, secrets, first admin), `vercel.json`.
+
+**Verified**
+- RLS suite (15 cases × PGlite and Postgres 16): anonymous sees published only,
+  cannot write or read accounts/operational tables; editors draft but cannot
+  publish; admins publish only with a known licence and attestation; presets
+  private per user; audit actor cannot be forged; FTS over tag names.
+- Migrations applied by a **non-superuser CREATEROLE owner on a fresh
+  Postgres 16 cluster** (simulating Supabase's `postgres` role), which can then
+  assume both RLS roles. Re-running is a no-op.
+- Upload pipeline (12 cases × 2 drivers): GLB stats, image alpha, dedupe,
+  disguised executable rejected and staged bytes deleted, size mismatch,
+  ZIP with `.exe`, wrong purpose, oversize, cross-user completion, anonymous
+  access, expiry sweep, audit redaction.
+- Storage contract (7 cases × local, R2 two-bucket, R2 single-bucket) against
+  an S3-compatible server (moto), including real presigned PUT/GET.
+- E2E: sign-in errors, cookie flags, dashboard, sign-out, setup lock, open
+  redirect refused; journey 10 — unauthenticated upload signing 401/403,
+  cross-site POST with a valid session 403, forged storage tokens 403,
+  private/unknown paths under `/files` 404.
+
+**Bugs found and fixed by the tests**: postgres.js double-encoded JSON params
+(convention now `$n::text::jsonb`); nested service queries inside a user
+transaction deadlocked PGlite (introduced the `Tx` runner); a migration that
+silently swallowed a failed role grant (replaced by an explicit, loud one).
+
+**Not yet verified against the owner's real services**: Supabase pooler and
+Cloudflare R2 themselves (no credentials in this environment). The R2 adapter
+is verified against an S3-compatible server; DEPLOYMENT.md lists the checks to
+run after the first deploy.
 
 ## Owner deliveries (2026-10-16)
 
