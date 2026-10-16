@@ -22,6 +22,7 @@ export const GET = route(async (request: Request, ctx: RouteContext<"/api/downlo
   const target = getStorage().publicUrl(d.publicKey);
   return new Response(null, {
     status: 302,
-    headers: { Location: target.startsWith("http") ? target : new URL(target, request.url).toString(), "Cache-Control": "no-store" },
+    // A relative Location keeps local storage URLs on the host the visitor used.
+    headers: { Location: target, "Cache-Control": "no-store" },
   });
 });

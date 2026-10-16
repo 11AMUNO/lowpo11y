@@ -9,7 +9,7 @@ import { IMMUTABLE_CACHE, type AssetStorage } from "@/lib/storage";
 import { buildAssetBundle, type LicenceInfo } from "./bundle";
 import { storeAssetFile, type AssetFileRow } from "./files";
 import { getAssetById, listAssetFiles, recomputeAssetFacets, type AssetRow } from "./repository";
-import { ASSET_TYPE_LABEL, PROVENANCE_LABEL } from "./schemas";
+import { ASSET_TYPE_LABEL, assetPath, PROVENANCE_LABEL } from "./schemas";
 
 export interface ChecklistItem {
   id: string;
@@ -102,7 +102,7 @@ export async function publishAsset(tx: Tx, storage: AssetStorage, assetId: strin
       shortDescription: asset.short_description,
       type: asset.asset_type,
       version: asset.version,
-      url: absoluteUrl(`/${asset.asset_type === "texture" ? "textures" : "assets"}/${asset.slug}`),
+      url: absoluteUrl(assetPath(asset)),
       publishedAt,
       attributionText: asset.attribution_text,
       licenceSourceUrl: asset.licence_source_url,

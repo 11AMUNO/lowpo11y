@@ -75,7 +75,7 @@ export function Module({ n, name, summary, enabled, onEnabledChange, defaultOpen
         </button>
         <span className="min-w-0 flex-1 truncate text-right font-ocr text-[11px] tracking-[0.04em] text-muted uppercase">{off ? "" : summary}</span>
         {enabled !== undefined && onEnabledChange ? (
-          <OnOff on={enabled} onToggle={() => onEnabledChange(!enabled)} label={`Turn ${name.toLowerCase()} ${enabled ? "off" : "on"}`} />
+          <OnOff on={enabled} onToggle={() => onEnabledChange(!enabled)} label={`Enable ${name.toLowerCase()}`} />
         ) : null}
       </div>
       {showBody ? <div className="flex flex-col gap-2.5 border-t border-dashed border-rule-strong px-2.5 pt-2.5 pb-3">{children}</div> : null}

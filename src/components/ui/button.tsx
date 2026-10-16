@@ -105,7 +105,6 @@ export function OnOff({
     <button
       type="button"
       aria-pressed={on}
-      aria-label={label}
       title={label}
       disabled={disabled}
       onClick={onToggle}
@@ -114,6 +113,8 @@ export function OnOff({
         on ? "border-bright bg-bright text-bg [text-shadow:none] shadow-[var(--crt-glow)]" : "border-edge bg-transparent text-muted",
       )}
     >
+      {/* The name includes the visible ON/OFF text (WCAG 2.5.3 label in name). */}
+      <span className="sr-only">{label}: </span>
       {on ? "ON" : "OFF"}
     </button>
   );

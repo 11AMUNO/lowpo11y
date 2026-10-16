@@ -10,7 +10,7 @@ import { absoluteUrl } from "@/lib/site";
 import { IMMUTABLE_CACHE, keys, type AssetStorage } from "@/lib/storage";
 import { sha256Hex } from "@/lib/auth/tokens";
 import { licenceText, uniqueNames, type LicenceInfo } from "./bundle";
-import { slugify } from "./schemas";
+import { assetPath, slugify, type AssetType } from "./schemas";
 
 export const collectionInputSchema = z.object({
   title: z.string().trim().min(2).max(120),
@@ -133,7 +133,7 @@ export async function publishCollection(tx: Tx, storage: AssetStorage, collectio
       entries[`${col.slug}/${m.slug}/files/${names[i]}`] = [bytes, { mtime }];
       fileEntries.push({ path: `${m.slug}/files/${names[i]}`, bytes: bytes.byteLength, sha256: sha256Hex(bytes), format: f.format });
     }
-    const url = absoluteUrl(`/${m.asset_type === "texture" ? "textures" : "assets"}/${m.slug}`);
+    const url = absoluteUrl(assetPath(m));
     const text = licenceText({ title: m.title, url, attributionText: m.attribution_text, licenceSourceUrl: m.licence_source_url, provenance: m.provenance_notes }, m.licence!);
     entries[`${col.slug}/${m.slug}/LICENSE.txt`] = [enc.encode(text), { mtime }];
     notice.push(`## ${m.title}`, text, "");
@@ -172,24 +172,90 @@ export async function unpublishCollection(tx: Tx, storage: AssetStorage, collect
 
 export interface PublicCollection extends CollectionRow {
   asset_count: number;
+  download_count: number;
+  /** Up to four member thumbnails, in collection order. */
+  thumbs: string[];
 }
+
+const PUBLISHED_MEMBERS = "join assets a on a.id = ca.asset_id where ca.collection_id = c.id and a.status = 'published' and a.deleted_at is null";
 
 export async function listPublicCollections(q: Queryable): Promise<PublicCollection[]> {
   return q.query<PublicCollection>(
-    `select c.*, (select count(*)::int from collection_assets ca join assets a on a.id = ca.asset_id
-                   where ca.collection_id = c.id and a.status = 'published' and a.deleted_at is null) as asset_count
+    `select c.*,
+            (select count(*)::int from collection_assets ca ${PUBLISHED_MEMBERS}) as asset_count,
+            coalesce((select array_agg(t.thumbnail_url order by t.position) from (
+               select a.thumbnail_url, ca.position from collection_assets ca ${PUBLISHED_MEMBERS} and a.thumbnail_url is not null
+                order by ca.position limit 4) t), '{}') as thumbs
        from collections c where c.status = 'published' and c.deleted_at is null order by c.featured desc, c.sort_order, c.published_at desc`,
   );
 }
 
+export interface PublicCollectionItem {
+  id: string;
+  slug: string;
+  title: string;
+  asset_type: AssetType;
+  thumbnail_url: string | null;
+  licence_short: string | null;
+  licence_code: string | null;
+  attribution_required: boolean | null;
+  triangle_count: number | null;
+  texture_size: number | null;
+  formats: string[];
+  short_description: string;
+  is_demo: boolean;
+  is_animated: boolean;
+  is_rigged: boolean;
+  category_name: string | null;
+  category_slug: string | null;
+  download_count: number;
+  published_at: Date;
+  tag_names: string[] | null;
+}
+
 export async function getPublicCollection(q: Queryable, slug: string) {
-  const [col] = await q.query<CollectionRow>("select * from collections where slug = $1 and status = 'published' and deleted_at is null", [slug]);
+  const [col] = await q.query<PublicCollection>(
+    "select c.*, 0 as asset_count, '{}'::text[] as thumbs from collections c where slug = $1 and status = 'published' and deleted_at is null",
+    [slug],
+  );
   if (!col) return null;
-  const items = await q.query<{ id: string; slug: string; title: string; asset_type: string; thumbnail_url: string | null; licence_short: string | null; triangle_count: number | null; texture_size: number | null; formats: string[]; short_description: string; is_demo: boolean }>(
-    `select a.id, a.slug, a.title, a.asset_type, a.thumbnail_url, l.short_label as licence_short, a.triangle_count, a.texture_size, a.formats, a.short_description, a.is_demo
-       from collection_assets ca join assets a on a.id = ca.asset_id left join licences l on l.id = a.licence_id
+  const items = await q.query<PublicCollectionItem>(
+    `select a.id, a.slug, a.title, a.asset_type, a.thumbnail_url, l.short_label as licence_short, l.code as licence_code, l.attribution_required,
+            a.triangle_count, a.texture_size, a.formats, a.short_description, a.is_demo, a.is_animated, a.is_rigged,
+            c.name as category_name, c.slug as category_slug, a.download_count, a.published_at, null::text[] as tag_names
+       from collection_assets ca join assets a on a.id = ca.asset_id left join licences l on l.id = a.licence_id left join categories c on c.id = a.category_id
       where ca.collection_id = $1 and a.status = 'published' and a.deleted_at is null order by ca.position`,
     [col.id],
   );
-  return { collection: col, items };
+  return { collection: { ...col, asset_count: items.length }, items };
+}
+
+/** Public context: the pack's public key, or null when it has no published bundle. */
+export async function resolveCollectionDownload(q: Queryable, slug: string): Promise<{ id: string; slug: string; publicKey: string } | null> {
+  const [row] = await q.query<{ id: string; slug: string; bundle_public_key: string | null }>(
+    "select id, slug, bundle_public_key from collections where slug = $1 and status = 'published' and deleted_at is null",
+    [slug],
+  );
+  return row?.bundle_public_key ? { id: row.id, slug: row.slug, publicKey: row.bundle_public_key } : null;
+}
+
+/** Service context. Counts a pack download without storing anything about the visitor. */
+export async function recordCollectionDownload(q: Queryable, collectionId: string, now = new Date()): Promise<void> {
+  await q.query(
+    `insert into collection_download_daily (collection_id, day, downloads) values ($1, $2::date, 1)
+     on conflict (collection_id, day) do update set downloads = collection_download_daily.downloads + 1`,
+    [collectionId, now.toISOString().slice(0, 10)],
+  );
+  await q.query("update collections set download_count = download_count + 1 where id = $1", [collectionId]);
+}
+
+/** Published collections whose title or summary matches, for the command palette. */
+export async function searchCollections(q: Queryable, text: string, limit = 3): Promise<{ id: string; slug: string; title: string; asset_count: number }[]> {
+  const like = `%${text.replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
+  return q.query(
+    `select c.id, c.slug, c.title, (select count(*)::int from collection_assets ca ${PUBLISHED_MEMBERS}) as asset_count
+       from collections c where c.status = 'published' and c.deleted_at is null and (c.title ilike $1 or c.summary ilike $1)
+      order by c.featured desc, c.title limit ${Math.floor(limit)}`,
+    [like],
+  );
 }

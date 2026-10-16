@@ -179,27 +179,42 @@ function buildWhere(p: CatalogParams, scope: { types?: AssetType[] }, omit?: str
 
 const FROM = "from assets a left join categories c on c.id = a.category_id left join licences l on l.id = a.licence_id";
 
-export async function searchCatalog(q: Queryable, p: CatalogParams, scope: { types?: AssetType[] } = {}): Promise<CatalogResult> {
+async function listItems(q: Queryable, p: CatalogParams, scope: { types?: AssetType[] }, limit: number, offset: number): Promise<{ items: CatalogItem[]; total: number }> {
   if (p.q) await q.query("select set_config('pg_trgm.word_similarity_threshold', '0.5', true)");
   const { where, params } = buildWhere(p, scope);
   const order =
     p.sort === "popular" ? "a.download_count desc, a.published_at desc" : p.sort === "name" ? "lower(a.title) asc" : "a.featured desc, a.published_at desc";
   const rank = p.q ? `ts_rank(a.search_tsv, websearch_to_tsquery('english', $${params.length + 1})) + word_similarity($${params.length + 1}, a.title) desc, ` : "";
   const listParams = p.q ? [...params, p.q] : [...params];
-  const offset = (p.page - 1) * PAGE_SIZE;
   const [items, [count]] = await Promise.all([
     q.query<CatalogItem>(
       `select a.id, a.slug, a.title, a.short_description, a.asset_type, c.name as category_name, c.slug as category_slug,
               l.short_label as licence_short, l.code as licence_code, a.formats, a.triangle_count, a.texture_size, a.thumbnail_url,
               a.is_demo, a.is_animated, a.is_rigged, a.download_count, a.published_at,
               (select array_agg(t.name order by t.name) from asset_tags at join tags t on t.id = at.tag_id where at.asset_id = a.id and t.facet in ('style','setting','general')) as tag_names
-       ${FROM} where ${where} order by ${p.sort === "recent" ? rank : ""}${order}, a.id limit ${PAGE_SIZE} offset ${offset}`,
+       ${FROM} where ${where} order by ${p.sort === "recent" ? rank : ""}${order}, a.id limit ${Math.floor(limit)} offset ${Math.floor(offset)}`,
       listParams,
     ),
     q.query<{ n: number }>(`select count(*)::int as n ${FROM} where ${where}`, params),
   ]);
-  const total = count?.n ?? 0;
+  return { items, total: count?.n ?? 0 };
+}
+
+export async function searchCatalog(q: Queryable, p: CatalogParams, scope: { types?: AssetType[] } = {}): Promise<CatalogResult> {
+  const { items, total } = await listItems(q, p, scope, PAGE_SIZE, (p.page - 1) * PAGE_SIZE);
   return { items, total, page: p.page, pageCount: Math.max(1, Math.ceil(total / PAGE_SIZE)), facets: await facets(q, p, scope) };
+}
+
+/** Best matches for the command palette: no facets, a handful of rows. */
+export async function quickSearch(q: Queryable, text: string, limit = 8): Promise<CatalogItem[]> {
+  const p = catalogParamsSchema.parse({ q: text });
+  if (!p.q) return [];
+  return (await listItems(q, p, {}, limit, 0)).items;
+}
+
+/** Newest (featured first) published assets, for the home page. */
+export async function latestAssets(q: Queryable, limit = 12, types?: AssetType[]): Promise<CatalogItem[]> {
+  return (await listItems(q, catalogParamsSchema.parse({}), { types }, limit, 0)).items;
 }
 
 async function facets(q: Queryable, p: CatalogParams, scope: { types?: AssetType[] }): Promise<CatalogResult["facets"]> {

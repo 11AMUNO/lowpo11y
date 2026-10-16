@@ -4,8 +4,16 @@ import path from "node:path";
 import sharp from "sharp";
 import { unzipSync } from "fflate";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { catalogCounts, getPublicAsset, parseCatalogParams, searchCatalog } from "@/lib/assets/catalog";
-import { publishCollection, createCollection, getPublicCollection } from "@/lib/assets/collections";
+import { catalogCounts, getPublicAsset, latestAssets, parseCatalogParams, quickSearch, searchCatalog } from "@/lib/assets/catalog";
+import {
+  createCollection,
+  getPublicCollection,
+  listPublicCollections,
+  publishCollection,
+  recordCollectionDownload,
+  resolveCollectionDownload,
+  searchCollections,
+} from "@/lib/assets/collections";
 import { generateDerivatives } from "@/lib/assets/derive";
 import { DownloadError, recordDownload, resolveDownload } from "@/lib/assets/downloads";
 import { storeAssetFile } from "@/lib/assets/files";
@@ -118,6 +126,20 @@ describe.each(TEST_DRIVERS)("asset library (%s)", (driver) => {
       expect(page2.pageCount).toBe(1);
     });
 
+    it("quick search returns ranked matches for the palette and nothing for blank input", async () => {
+      const hits = await anon((q) => quickSearch(q, "crat", 5));
+      expect(hits[0]!.slug).toBe("demo-wooden-crate");
+      expect(await anon((q) => quickSearch(q, "   "))).toEqual([]);
+    });
+
+    it("lists the newest assets, featured first, optionally by type", async () => {
+      const latest = await anon((q) => latestAssets(q, 4));
+      expect(latest).toHaveLength(4);
+      expect(latest.slice(0, 2).map((a) => a.slug).sort()).toEqual(["demo-crt-monitor", "demo-wooden-crate"]);
+      const textures = await anon((q) => latestAssets(q, 20, ["texture"]));
+      expect(textures.every((a) => a.asset_type === "texture")).toBe(true);
+    });
+
     it("ignores garbage parameters instead of failing", async () => {
       const r = await catalog({ type: "nope,model", tris: "lots", page: "-4", sort: "random", format: "<script>" });
       expect(r.total).toBe(10);
@@ -220,6 +242,29 @@ describe.each(TEST_DRIVERS)("asset library (%s)", (driver) => {
       const licences = Object.keys(zip).filter((k) => k.endsWith("/LICENSE.txt"));
       expect(licences.length).toBe(pub!.items.length);
       expect(Object.keys(zip)).toContain("demo-industrial-blockout-kit/NOTICE.txt");
+    });
+
+    it("lists published packs with member counts and thumbnails, and finds them by text", async () => {
+      const cols = await anon((q) => listPublicCollections(q));
+      expect(cols.map((c) => c.slug).sort()).toEqual(["demo-industrial-blockout-kit", "demo-texture-page-0"]);
+      const kit = cols.find((c) => c.slug === "demo-industrial-blockout-kit")!;
+      expect(kit.asset_count).toBe(13);
+      expect(kit.thumbs).toHaveLength(4);
+      expect((await anon((q) => searchCollections(q, "yard"))).map((c) => c.slug)).toEqual(["demo-industrial-blockout-kit"]);
+      expect(await anon((q) => searchCollections(q, "100%_"))).toEqual([]);
+    });
+
+    it("counts pack downloads without visitor data", async () => {
+      const pack = await anon((q) => resolveCollectionDownload(q, "demo-texture-page-0"));
+      expect(pack?.publicKey).toMatch(/^collections\//);
+      await recordCollectionDownload(t.db, pack!.id);
+      await recordCollectionDownload(t.db, pack!.id);
+      const [row] = await t.db.query<{ download_count: number; days: number }>(
+        "select download_count, (select sum(downloads)::int from collection_download_daily where collection_id = c.id) as days from collections c where id = $1",
+        [pack!.id],
+      );
+      expect(row).toEqual({ download_count: 2, days: 2 });
+      expect(await anon((q) => resolveCollectionDownload(q, "no-such-pack"))).toBeNull();
     });
   });
 });

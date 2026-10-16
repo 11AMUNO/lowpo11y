@@ -3,7 +3,8 @@ import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import type { Db } from "./client";
 
-export const MIGRATIONS_DIR = path.resolve(process.cwd(), "supabase/migrations");
+// turbopackIgnore: a runtime path, not a module; next.config.ts traces the folder explicitly.
+export const MIGRATIONS_DIR = path.resolve(/* turbopackIgnore: true */ process.cwd(), "supabase/migrations");
 
 export interface MigrationResult {
   applied: string[];
@@ -24,7 +25,7 @@ export async function migrate(db: Db, dir = MIGRATIONS_DIR): Promise<MigrationRe
   );
   alter table public.lp_schema_migrations enable row level security;`);
 
-  const files = (await readdir(dir)).filter((f) => f.endsWith(".sql")).sort();
+  const files = (await readdir(/* turbopackIgnore: true */ dir)).filter((f) => f.endsWith(".sql")).sort();
   const done = new Map(
     (await db.query<{ name: string; checksum: string }>("select name, checksum from public.lp_schema_migrations")).map((r) => [
       r.name,
@@ -34,7 +35,7 @@ export async function migrate(db: Db, dir = MIGRATIONS_DIR): Promise<MigrationRe
 
   const result: MigrationResult = { applied: [], skipped: [] };
   for (const file of files) {
-    const sql = await readFile(path.join(dir, file), "utf8");
+    const sql = await readFile(/* turbopackIgnore: true */ path.join(dir, file), "utf8");
     const checksum = createHash("sha256").update(sql).digest("hex");
     const previous = done.get(file);
     if (previous) {

@@ -44,7 +44,8 @@ const subscribe = (l: Listener) => {
   return () => listeners.delete(l);
 };
 const getSnapshot = () => items;
-const getServerSnapshot = (): ToastItem[] => [];
+const EMPTY: ToastItem[] = [];
+const getServerSnapshot = () => EMPTY;
 
 const PREFIX: Record<ToastTone, string> = { info: ">", ok: ">", danger: "!" };
 

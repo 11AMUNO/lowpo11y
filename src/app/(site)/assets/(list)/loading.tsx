@@ -1,8 +1,10 @@
 import { Skeleton } from "@/components/ui/feedback";
 
+/** Listing pages only: detail pages render without a Suspense boundary so 404s and redirects keep real status codes. */
+
 export default function Loading() {
   return (
-    <div className="mx-auto w-full max-w-[90rem] px-4 py-10 sm:px-6" aria-busy="true" aria-label="Loading">
+    <div className="mx-auto w-full max-w-[105rem] px-4 py-10 sm:px-6" aria-busy="true" aria-label="Loading">
       <Skeleton className="h-4 w-40" />
       <Skeleton className="mt-6 h-11 w-2/3 max-w-xl" />
       <Skeleton className="mt-4 h-5 w-1/2 max-w-lg" />

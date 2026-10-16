@@ -13,6 +13,8 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Native / WASM server-only packages must not be bundled.
   serverExternalPackages: ["@electric-sql/pglite", "sharp", "postgres"],
+  // Local PGlite databases migrate on first use, so the SQL must ship with the server.
+  outputFileTracingIncludes: { "/**": ["./supabase/migrations/*.sql"] },
   turbopack: {
     rules: {
       "*.css": {

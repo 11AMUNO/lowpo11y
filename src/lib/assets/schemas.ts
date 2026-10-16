@@ -79,3 +79,11 @@ export function slugify(input: string): string {
 export function tagSlug(name: string): string {
   return slugify(name).slice(0, 40) || "tag";
 }
+
+/** Asset types listed under /textures; everything else lives under /assets. */
+export const TEXTURE_SECTION_TYPES: readonly AssetType[] = ["texture", "decal", "skybox"];
+
+/** Canonical public path of an asset's detail page. */
+export function assetPath(asset: { slug: string; asset_type: string }): string {
+  return `/${(TEXTURE_SECTION_TYPES as readonly string[]).includes(asset.asset_type) ? "textures" : "assets"}/${asset.slug}`;
+}

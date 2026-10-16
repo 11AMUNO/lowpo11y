@@ -1,7 +1,22 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
-const PAGES = ["/", "/tools", "/assets", "/about", "/licences", "/privacy", "/contact"];
+const PAGES = [
+  "/",
+  "/tools",
+  "/assets",
+  "/assets?view=list&type=model",
+  "/textures",
+  "/assets/demo-wooden-crate",
+  "/textures/demo-red-brick",
+  "/collections",
+  "/collections/demo-industrial-blockout-kit",
+  "/assets/no-such-asset",
+  "/about",
+  "/licences",
+  "/privacy",
+  "/contact",
+];
 
 for (const crt of ["on", "off"] as const) {
   test.describe(`accessibility (CRT ${crt})`, () => {
