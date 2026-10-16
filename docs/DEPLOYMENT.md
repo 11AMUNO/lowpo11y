@@ -160,6 +160,13 @@ redeploy.
 
 ---
 
+## 8. Add your assets
+
+Sign in, open **Admin → Import**, choose the folder with your models or
+textures and follow the steps. Everything arrives as a draft; publish each
+asset once its licence and rights are set. The full guide, including the
+terminal command for large libraries, is in [IMPORTING.md](IMPORTING.md).
+
 ## Running locally
 
 ```bash

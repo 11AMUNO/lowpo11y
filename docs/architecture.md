@@ -58,8 +58,42 @@ admin browser ──POST /api/admin/uploads/{id}/complete
                                                     purpose allow-list, ZIP entries, image/model analysis
                                                   ► copy to private assets/{assetId}/{purpose}/{fileId}.{ext}
                                                   ► insert asset_files (RLS: staff), audit, delete staging
-publish (M03) ────────────────────────────────────► copy published files to the public bucket, build bundle ZIP
+derive ───────────────────────────────────────────► FBX → GLB (three.js FBXLoader in Node), software-rendered
+                                                    thumbnail, 32–256 px nearest-neighbour texture variants
+publish (admin) ──────────────────────────────────► checklist (licence, attestation, files, thumbnail), copy
+                                                    published files to the public bucket, build the bundle ZIP
+                                                    (files + LICENSE + README + manifest with checksums)
+unpublish ────────────────────────────────────────► delete public copies immediately; originals stay private
 ```
+
+Bulk import (`src/lib/assets/import.ts`) plans assets from a folder listing or
+a JSON/CSV manifest, validates the plan against the library (references,
+slugs, duplicates by SHA-256) and then runs the same create → store → derive
+steps: from the browser at `/admin/import` (through the signed upload flow
+above) or from `pnpm import:assets` (server-side). See `docs/IMPORTING.md`.
+
+## Catalogue
+
+- `searchCatalog` (`src/lib/assets/catalog.ts`) runs under the public RLS
+  context: full-text (`search_tsv` incl. tag names), prefix (`cra` → crate)
+  and typo-tolerant `word_similarity` matching; facets are counted from real
+  file metadata with every other active filter applied.
+- Listing pages (`/assets`, `/textures`) are link-driven (no client JS needed
+  for filters, sort, view or paging); filtered URLs are `noindex`.
+- Detail pages load three.js only for the GLB viewer; textures use a CSS
+  `image-rendering: pixelated` viewer. Downloads go through
+  `/api/download/{fileId}` (counted per day, no visitor data) and redirect to
+  the public bucket; packs through `/api/collections/{slug}/download`.
+- Loading UIs live in the listing route groups only, so detail pages answer
+  with real 404 and 308 status codes.
+
+## Admin
+
+`/admin` pages render under the staff member's RLS context; mutations go
+through `src/app/api/admin/*` route handlers, which check the session, the
+Origin, the role (publishing, published edits and deletion are admin-only) and
+write an audit entry. Editors can draft and submit for review. The database
+enforces the same rules again (RLS and publish guards).
 
 ## Environments
 
@@ -68,6 +102,12 @@ publish (M03) ──────────────────────
 | `pnpm dev` | PGlite | local FS | `.data/dev` |
 | `pnpm test` | PGlite in-memory (+ Postgres 16 when `TEST_DATABASE_URL` is set) | in-memory / temp dir | temp |
 | `pnpm e2e` | PGlite | local FS | `.data/e2e` (reset each run) |
+| `pnpm import:assets` | same as the environment it runs in | same | — |
 | production | Supabase (`DATABASE_URL`) | R2 | — |
 
 See `DEPLOYMENT.md` for production setup.
+
+The embedded PGlite database belongs to one process at a time: a lock file
+(`.data/<env>/pglite.lock`) makes a second process (for example a CLI script
+while `pnpm dev` is running) stop with a clear message instead of corrupting
+data.

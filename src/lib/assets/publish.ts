@@ -21,20 +21,19 @@ export interface ChecklistItem {
 
 export function publishChecklist(asset: AssetRow, files: AssetFileRow[], licence: LicenceInfo | null): ChecklistItem[] {
   const live = files.filter((f) => f.published);
-  return [
+  const items: ChecklistItem[] = [
     { id: "licence", label: "A known licence is chosen", ok: !!licence && licence.code !== "unknown", blocking: true },
     { id: "attested", label: "Ownership or redistribution rights are confirmed", ok: !!asset.ownership_attested_at, blocking: true },
     { id: "delivery", label: "At least one downloadable file", ok: live.some((f) => f.purpose === "delivery"), blocking: true },
     { id: "thumbnail", label: "A thumbnail", ok: live.some((f) => f.purpose === "thumbnail"), blocking: true },
     { id: "description", label: "A short description", ok: asset.short_description.trim().length >= 10, blocking: false },
     { id: "category", label: "A category", ok: !!asset.category_id, blocking: false },
-    {
-      id: "attribution",
-      label: "Attribution text (the licence requires credit)",
-      ok: !licence?.attribution_required || !!asset.attribution_text?.trim(),
-      blocking: false,
-    },
   ];
+  // Only relevant when the chosen licence asks for credit.
+  if (licence?.attribution_required) {
+    items.push({ id: "attribution", label: "Attribution text (the licence requires credit)", ok: !!asset.attribution_text?.trim(), blocking: false });
+  }
+  return items;
 }
 
 export class PublishError extends Error {

@@ -1,7 +1,7 @@
 import sharp from "sharp";
 import { unzipSync } from "fflate";
 import { expect, test, type Page } from "@playwright/test";
-import { signIn } from "./fixtures";
+import { asAdmin } from "./fixtures";
 
 /** A small seamless test texture made on the fly, so no binary fixture is committed. */
 async function testPng(size = 64): Promise<Buffer> {
@@ -25,8 +25,7 @@ async function expectToast(page: Page, text: string | RegExp) {
 /** Journey 2: staff create, upload, license and publish an asset; visitors download it; unpublishing takes it down. */
 test.describe("admin asset CMS", () => {
   test("create → upload → licence → publish → download → unpublish", async ({ page, request }) => {
-    await signIn(page);
-    await page.goto("/admin/assets/new");
+    await asAdmin(page, "/admin/assets/new");
     await page.getByLabel("Title").fill("E2E brass checker");
     await page.getByLabel("Type").selectOption("texture");
     await page.getByRole("button", { name: "Create draft" }).click();
@@ -100,8 +99,7 @@ test.describe("admin asset CMS", () => {
   });
 
   test("collections: build a pack from published assets", async ({ page }) => {
-    await signIn(page);
-    await page.goto("/admin/collections/new");
+    await asAdmin(page, "/admin/collections/new");
     await page.getByLabel("Title").fill("E2E crate pack");
     await page.getByRole("button", { name: "Create collection" }).click();
     await page.waitForURL(/\/admin\/collections\/[0-9a-f-]{36}$/);
@@ -120,6 +118,34 @@ test.describe("admin asset CMS", () => {
     await expect(page.getByRole("link", { name: /Wooden pallet/ })).toBeVisible();
   });
 
+  test("bulk import: plan, import drafts, then detect them as already imported", async ({ page }) => {
+    await asAdmin(page, "/admin/import");
+    const files = [
+      { name: "01 - E2E Teak Planks.png", mimeType: "image/png", buffer: await testPng(32) },
+      { name: "02 - E2E Ash Boards.png", mimeType: "image/png", buffer: await testPng(48) },
+    ];
+    await page.getByLabel("Files to import").setInputFiles(files);
+    await expect(page.getByText("2 files //")).toBeVisible();
+    await page.getByLabel("Category").selectOption({ label: "Wood" });
+    await page.getByRole("button", { name: "Plan import" }).click();
+    await expect(page.getByText("2 ready // 0 already imported // 0 blocked")).toBeVisible();
+    await expect(page.getByRole("cell", { name: /^E2E Teak Planks Texture/ })).toBeVisible();
+    await page.getByRole("button", { name: "Import 2 drafts" }).click();
+    await expect(page.getByRole("link", { name: "Created draft" })).toHaveCount(2, { timeout: 30_000 });
+    await expect(page.getByRole("link", { name: "Review drafts" })).toBeVisible();
+
+    // The same files again are recognised by checksum.
+    await page.getByRole("button", { name: "Plan import" }).click();
+    await expect(page.getByText("0 ready // 2 already imported // 0 blocked")).toBeVisible();
+
+    await page.goto("/admin/assets?status=draft&q=E2E+Teak");
+    await page.getByRole("link", { name: "E2E Teak Planks" }).click();
+    await expect(page.getByRole("link", { name: "01 - E2E Teak Planks.png" })).toBeVisible();
+    await expect(page.getByRole("link", { name: /thumb\.webp$/ })).toBeVisible();
+    // Imports never confirm rights or pick a licence on their own.
+    await expect(page.getByRole("list", { name: "Publishing checklist" }).getByText("A known licence is chosen — required")).toBeAttached();
+  });
+
   test("contact form message reaches the admin inbox", async ({ page }) => {
     await page.goto("/contact?topic=takedown&asset=demo-wooden-crate");
     await expect(page.getByLabel("What is it about?")).toHaveValue("takedown");
@@ -133,7 +159,7 @@ test.describe("admin asset CMS", () => {
     await page.getByRole("button", { name: "Send message" }).click();
     await expect(page.getByText("Message sent")).toBeVisible();
 
-    await signIn(page);
+    await asAdmin(page);
     await expect(page.getByText(/open takedown request/)).toBeVisible();
     await page.goto("/admin/messages");
     const card = page.getByRole("article").filter({ hasText: "E2E takedown request" });

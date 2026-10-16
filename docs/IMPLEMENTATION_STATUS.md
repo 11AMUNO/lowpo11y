@@ -12,8 +12,8 @@ _Last updated: 2026-10-16_
 | M00 Discovery & setup | ✅ Done | lint, typecheck, unit, build, E2E smoke all pass locally; CI workflow committed |
 | M01 Public shell & design system | ✅ Done | 25 Playwright tests incl. axe WCAG 2.2 AA on 7 pages (CRT on/off); 35 unit tests; restyled to owner's Seamless identity |
 | M02 Infrastructure (DB, RLS, auth, storage, uploads) | ✅ Done | 143 unit/integration tests (RLS on PGlite + Postgres 16; storage contract on local + S3); 35 E2E incl. journey 10 |
-| M03 Asset CMS + catalogue | ⏳ Next | — |
-| M04 Initial processing tools | ⬜ Not started | — |
+| M03 Asset CMS + catalogue | ✅ Done | 221 unit/integration tests (PGlite + Postgres 16 + S3); 67 E2E incl. journeys 1–3 and axe on 10 public + 8 admin pages |
+| M04 Initial processing tools | ⏳ Next | — |
 | M05 Advanced tools | ⬜ Not started | — |
 | M06 Resources & curated video directory | ⬜ Not started | — |
 | M07 Asset Workshop | ⬜ Not started | — |
@@ -157,13 +157,97 @@ Cloudflare R2 themselves (no credentials in this environment). The R2 adapter
 is verified against an S3-compatible server; DEPLOYMENT.md lists the checks to
 run after the first deploy.
 
+## M03 — Asset CMS and public catalogue
+
+**Built**
+- Asset pipeline (`src/lib/assets`): FBX → GLB conversion (three.js
+  FBXLoader in Node, textures resolved by name), software-rasterised model
+  thumbnails, image thumbnails, 32–256 px nearest-neighbour variants, facets
+  recomputed from real file metadata, publish checklist, bundle ZIP (files +
+  LICENSE + README + manifest with checksums, deterministic), unpublish that
+  removes public copies at once, privacy-preserving download counts.
+- Public catalogue: `/assets` and `/textures` (full-text + prefix + typo
+  search, facet filters with counts, chips, sort, grid/list, pagination,
+  noindex on filtered URLs); detail pages with an orbitable GLB viewer
+  (shaded/unlit/wire, grid, turntable), a texel-accurate texture viewer
+  (zoom, 3×3 tiling, nearest/bilinear, backdrop, texel readout), ZIP and
+  per-file downloads, a credit dialog when the licence requires attribution,
+  licence rights, specs, tags, related items, JSON-LD; `/collections` and pack
+  pages with counted pack downloads; ⌘K palette searches the catalogue;
+  sitemap lists published assets and collections; home page uses live data.
+- Admin CMS: asset list (status/problem tabs, search, type), draft creation,
+  editor (details, licence and rights with attestation stamped by person and
+  date and cleared when the licence changes, files with signed uploads,
+  previews, primary/include/delete, automatic previews, publish checklist,
+  publish/republish/unpublish/delete, history), collections editor with an
+  asset picker and pack builds, bulk import wizard, contact inbox (takedowns
+  first), audit log, dashboard quick links. Editors draft and submit for
+  review; admins publish.
+- Bulk import (`src/lib/assets/import.ts`, `/admin/import`,
+  `pnpm import:assets`): folder grouping that matches the owner's exports,
+  JSON/CSV manifests, dry-run validation (references, slugs, duplicates by
+  SHA-256), drafts only, report + `import_jobs` record. Guide:
+  `docs/IMPORTING.md`.
+- Public contact/takedown form (rate limited per hashed address, honeypot).
+- Migrations 004 (collection download counts) and 005 (staff-only
+  `user_names` view for audit trails).
+- Demo library: 11 textures, 10 models and 2 collections seeded through the
+  real pipeline (`pnpm db:seed`, also used by E2E).
+
+**Owner assets (local only)**: all 72 Tripo FBX models and the 10 wood
+textures were imported into the local development library as drafts with
+`pnpm import:assets`: 82 created, 0 conversion warnings, 72 FBX converted to
+GLB with embedded textures, every asset with a thumbnail. Provenance for the
+models is recorded factually ("Exported from Tripo AI … plan and licence terms
+not yet confirmed"); no licence is set and rights are not confirmed. Nothing
+is in production yet: once the live site is deployed the owner imports from
+**Admin → Import** (or the CLI with production env vars) and publishes each
+asset after choosing its licence.
+
+**Verified**
+- Integration (PGlite + Postgres): seeded catalogue counts, search (full-text,
+  prefix, typo), facet counting, sorting/paging, garbage parameters, download
+  counting and dedupe, licence-blocked downloads, unpublish removes public
+  copies, publish rules, FBX pipeline (with and without textures),
+  collections (refuses unpublished members, NOTICE per asset, listing,
+  search, pack download counts), attestation rules, editor review flow,
+  admin lists, staff-only names, audit visibility, contact messages, bulk
+  import (drafts only, FBX → GLB, audit, dedupe on re-run, reference errors).
+- Unit: import planning on the owner's real folder layout, CSV/JSON
+  manifests, origin checks behind proxies and in dev, Markdown sanitising.
+- E2E: journey 1 (search with a typo, filter chips, model viewer, ZIP
+  contents, texture tiling/zoom, 308/404 status codes, collections, command
+  palette, sitemap); journey 2 (create → upload → content rejection →
+  details → licence + attestation → publish → visitor download → unpublish →
+  404 → history); journey 3 (collection pack build); bulk import wizard;
+  contact form → admin inbox; axe WCAG 2.2 AA on 10 public pages (CRT on and
+  off) and 8 admin pages.
+
+**Bugs found and fixed**: a site-wide loading boundary turned missing-asset
+404s and section redirects into 200s (moved into listing route groups); the
+nested 404 doubled the header; toast server snapshot caused a render loop
+warning; ON/OFF switches failed WCAG 2.5.3; the migration runner traced the
+whole project into the server bundle; the origin check rejected sign-in when
+Next dev normalised the host; changing a licence kept a stale attestation; a
+restored Turbopack dev cache put browsers into a reload loop (dev cache
+disabled); two processes could open the same local PGlite directory (lock
+file added).
+
+**Known limitations**
+- Collections, catalogue and admin work with up to thousands of assets; the
+  admin list and import planner are not yet tuned beyond that.
+- Republishing is manual after changing files or the licence of a published
+  asset (the editor says so).
+- Asset dependencies and creator credits exist in the schema and on detail
+  pages but have no editor UI yet (planned with M07 Workshop).
+
 ## Owner deliveries (2026-10-16)
 
 | Item | Contents | Status |
 |---|---|---|
 | `Seamless.zip` | 11AM-Seamless v2 (`engine.js`, `app.js`, `style.css`, `zip.js`, `index.html`) | Style adopted site-wide (M01). Engine port + regression tests in M04. |
-| `01 - Wood.zip` | 10 wood textures, 512×512 RGBA PNG | To import as the first texture collection (M03). **Rights/licence to confirm.** |
-| `Archive.zip` | 72 Blender-exported FBX models (Tripo AI), one 512px JPG texture each, in numbered themed sets | Needs FBX→GLB conversion and thumbnail rendering (M03). **Tripo plan/licence to confirm**; import as drafts until then. |
+| `01 - Wood.zip` | 10 wood textures, 512×512 RGBA PNG | Imported locally as drafts (M03). **Rights/licence to confirm** before publishing. |
+| `Archive.zip` | 72 FBX models exported from Tripo AI, one 512px JPG texture each, in 10 numbered themed sets (BH-01 … BH-12) | All 72 convert to GLB with textures and render thumbnails; imported locally as drafts (M03). **Tripo plan/licence to confirm** before publishing. |
 
 Assets are not committed to git; they are imported into storage through the
 ingest pipeline.

@@ -14,9 +14,10 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
     <div className="flex min-h-dvh flex-col">
       <header className="sticky top-0 z-40 border-b border-rule-strong bg-bg">
         <div className="flex items-center gap-4 px-4 sm:px-6">
-          <Link href="/" className="flex h-11 shrink-0 items-center gap-2" aria-label="LOWPO11Y site">
+          <Link href="/" className="flex h-11 shrink-0 items-center gap-2">
             <Wordmark />
             <span className="font-ocr text-[12px] tracking-[0.12em] text-muted">// ADMIN</span>
+            <span className="sr-only">: back to the public site</span>
           </Link>
           <AdminNav isAdmin={user.role === "admin"} />
           <div className="ml-auto flex items-center gap-3">

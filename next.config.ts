@@ -15,6 +15,11 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["@electric-sql/pglite", "sharp", "postgres"],
   // Local PGlite databases migrate on first use, so the SQL must ship with the server.
   outputFileTracingIncludes: { "/**": ["./supabase/migrations/*.sql"] },
+  experimental: {
+    // A dev cache restored across restarts left browsers in an endless
+    // "HMR hash mismatch" reload loop (Next 16.4 + Turbopack); start clean instead.
+    turbopackFileSystemCacheForDev: false,
+  },
   turbopack: {
     rules: {
       "*.css": {

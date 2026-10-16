@@ -36,11 +36,38 @@ export async function createDb(opts: DbOptions): Promise<Db> {
   return opts.url ? createPostgres(opts.url, opts.poolMax ?? 5) : createPglite(opts.dataDir);
 }
 
+export class DatabaseLockedError extends Error {}
+
+/**
+ * PGlite keeps the database in one process's memory and flushes it to disk;
+ * two processes on the same directory would overwrite each other. A pid
+ * lock file next to the data refuses the second one with a clear message.
+ */
+async function lockDataDir(dataDir: string): Promise<() => Promise<void>> {
+  const { mkdir, readFile, rm, writeFile } = await import("node:fs/promises");
+  const path = await import("node:path");
+  await mkdir(dataDir, { recursive: true });
+  const file = path.join(dataDir, "..", `${path.basename(dataDir)}.lock`);
+  const held = Number((await readFile(file, "utf8").catch(() => "")).trim());
+  if (held && held !== process.pid) {
+    let alive = true;
+    try {
+      process.kill(held, 0);
+    } catch {
+      alive = false;
+    }
+    if (alive) throw new DatabaseLockedError(`The local database (${dataDir}) is in use by another process (pid ${held}). Stop \`pnpm dev\` or the other script first.`);
+  }
+  await writeFile(file, String(process.pid));
+  return () => rm(file, { force: true });
+}
+
 async function createPglite(dataDir?: string): Promise<Db> {
   const [{ PGlite }, { pg_trgm }] = await Promise.all([
     import("@electric-sql/pglite"),
     import("@electric-sql/pglite/contrib/pg_trgm"),
   ]);
+  const unlock = dataDir ? await lockDataDir(dataDir) : async () => {};
   const pg = await PGlite.create(dataDir ? { dataDir, extensions: { pg_trgm } } : { extensions: { pg_trgm } });
   const wrap = (q: { query: typeof pg.query; exec: typeof pg.exec }): Queryable => ({
     async query<T>(text: string, params?: readonly unknown[]) {
@@ -57,7 +84,10 @@ async function createPglite(dataDir?: string): Promise<Db> {
     ...base,
     // PGlite runs transactions exclusively, so concurrent requests are serialised.
     transaction: (fn) => pg.transaction((tx) => fn(wrap(tx))),
-    close: () => pg.close(),
+    close: async () => {
+      await pg.close();
+      await unlock();
+    },
   };
 }
 

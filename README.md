@@ -31,6 +31,9 @@ the app uses an embedded Postgres (PGlite) and stores files on disk under
 | `pnpm test` | Unit and integration tests (Vitest) |
 | `pnpm e2e` | Browser tests (Playwright) against a fresh seeded production build — run `pnpm build` first |
 | `pnpm check` | lint + typecheck + test |
+| `pnpm db:seed` / `pnpm db:reset` | Local admin + demo library / wipe local data |
+| `pnpm admin:create` | Create or reset a staff account |
+| `pnpm import:assets <folder>` | Bulk-import models and textures as drafts ([guide](docs/IMPORTING.md)) |
 
 ## Documentation
 
@@ -38,3 +41,4 @@ the app uses an embedded Postgres (PGlite) and stores files on disk under
 - [Implementation status](docs/IMPLEMENTATION_STATUS.md)
 - [Architecture](docs/architecture.md) and [decision records](docs/decisions/)
 - [Design system](docs/DESIGN_SYSTEM.md)
+- [Deployment](docs/DEPLOYMENT.md) and [adding your assets](docs/IMPORTING.md)
