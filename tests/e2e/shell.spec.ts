@@ -54,13 +54,16 @@ test.describe("public shell", () => {
     await expect(page.getByRole("combobox", { name: "Search" })).toBeHidden();
   });
 
-  test("theme toggle switches and persists", async ({ page }) => {
+  test("CRT effects toggle switches and persists", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
-    await page.getByRole("button", { name: "Switch to light theme" }).click();
-    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    const toggle = page.getByRole("switch", { name: /CRT/ });
+    await expect(toggle).toHaveAttribute("aria-checked", "true");
+    await toggle.click();
+    await expect(page.locator("html")).toHaveAttribute("data-crt", "off");
     await page.reload();
-    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    await expect(page.locator("html")).toHaveAttribute("data-crt", "off");
+    await page.getByRole("switch", { name: /CRT/ }).click();
+    await expect(page.locator("html")).not.toHaveAttribute("data-crt", "off");
   });
 
   test("skip link moves focus to main content", async ({ page }) => {

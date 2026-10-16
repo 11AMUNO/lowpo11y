@@ -8,7 +8,7 @@ export const Tabs = RTabs.Root;
 
 export function TabList({ children, label, className }: { children: ReactNode; label: string; className?: string }) {
   return (
-    <RTabs.List aria-label={label} className={cn("flex gap-1 border-b border-rule", className)}>
+    <RTabs.List aria-label={label} className={cn("flex gap-1 border-b border-rule-strong", className)}>
       {children}
     </RTabs.List>
   );
@@ -19,7 +19,7 @@ export function Tab({ value, children, className }: { value: string; children: R
     <RTabs.Trigger
       value={value}
       className={cn(
-        "-mb-px h-10 border-b-2 border-transparent px-3 text-sm text-muted transition-colors hover:text-fg data-[state=active]:border-accent data-[state=active]:text-fg",
+        "-mb-px h-9 cursor-pointer border-b border-transparent px-3 font-ocr text-xs tracking-[0.1em] text-muted uppercase transition-colors hover:text-bright data-[state=active]:border-bright data-[state=active]:text-bright data-[state=active]:[text-shadow:var(--crt-glow)]",
         className,
       )}
     >

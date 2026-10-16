@@ -14,7 +14,7 @@ export function MenuContent({ children, align = "end", className }: { children: 
         align={align}
         sideOffset={6}
         className={cn(
-          "z-50 min-w-48 rounded-md border border-rule-strong bg-panel p-1 text-sm text-fg data-[state=open]:animate-[lp-fade_100ms_ease-out]",
+          "z-50 min-w-48 border border-rule-strong bg-panel p-1 font-ocr text-xs tracking-[0.06em] text-fg uppercase data-[state=open]:animate-[lp-fade_100ms_ease-out]",
           className,
         )}
       >
@@ -42,8 +42,8 @@ export function MenuItem({
       disabled={disabled}
       onSelect={onSelect}
       className={cn(
-        "flex h-8 cursor-default items-center gap-2 rounded-sm px-2 outline-none select-none data-[disabled]:opacity-45 data-[highlighted]:bg-panel-2 [&_svg]:size-4 [&_svg]:text-muted",
-        destructive && "text-danger data-[highlighted]:bg-danger-soft [&_svg]:text-danger",
+        "flex h-8 cursor-pointer items-center gap-2 border-l-2 border-transparent px-2 text-muted outline-none select-none data-[disabled]:opacity-40 data-[highlighted]:border-bright data-[highlighted]:bg-hover data-[highlighted]:text-bright [&_svg]:size-3.5",
+        destructive && "text-fg",
       )}
     >
       {icon}
@@ -53,9 +53,9 @@ export function MenuItem({
 }
 
 export function MenuSeparator() {
-  return <RMenu.Separator className="my-1 h-px bg-rule" />;
+  return <RMenu.Separator className="my-1 h-px border-t border-dashed border-rule-strong" />;
 }
 
 export function MenuLabel({ children }: { children: ReactNode }) {
-  return <RMenu.Label className="type-small px-2 py-1.5 text-muted">{children}</RMenu.Label>;
+  return <RMenu.Label className="px-2 py-1.5 text-muted">{children}</RMenu.Label>;
 }

@@ -13,7 +13,7 @@ export function Tooltip({ content, children, side = "top" }: { content: ReactNod
         <RTooltip.Content
           side={side}
           sideOffset={6}
-          className="z-[60] max-w-64 rounded-sm border border-rule-strong bg-panel-2 px-2 py-1 text-xs text-fg data-[state=delayed-open]:animate-[lp-fade_100ms_ease-out]"
+          className="z-[60] max-w-64 border border-edge bg-bg px-2 py-1 font-ocr text-[11px] tracking-[0.04em] text-fg data-[state=delayed-open]:animate-[lp-fade_100ms_ease-out]"
         >
           {content}
         </RTooltip.Content>

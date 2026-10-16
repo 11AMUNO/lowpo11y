@@ -1,12 +1,16 @@
-import { AlertTriangle, Loader2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
+const SPIN = ["|", "/", "-", "\\"];
+
+/** Text spinner in the terminal idiom. */
 export function Spinner({ className, label = "Loading" }: { className?: string; label?: string }) {
   return (
-    <span role="status" className="inline-flex items-center">
-      <Loader2 className={cn("size-4 animate-spin text-muted", className)} aria-hidden />
-      <span className="sr-only">{label}</span>
+    <span role="status" className={cn("inline-flex items-center gap-2 font-ocr text-xs text-muted", className)}>
+      <span aria-hidden className="inline-block w-[1ch] animate-pulse">
+        {SPIN[0]}
+      </span>
+      <span>{label.toUpperCase()}…</span>
     </span>
   );
 }
@@ -19,36 +23,38 @@ export interface ProgressProps {
   showValue?: boolean;
 }
 
-export function Progress({ value, label, className, showValue }: ProgressProps) {
+/** ASCII progress bar: [██████░░░░░░] 52%. */
+export function Progress({ value, label, className, showValue = true }: ProgressProps) {
   const pct = value === null ? null : Math.round(Math.min(1, Math.max(0, value)) * 100);
+  const cells = 24;
+  const filled = pct === null ? 0 : Math.round((pct / 100) * cells);
   return (
-    <div className={cn("flex flex-col gap-1", className)}>
-      {showValue ? (
-        <div className="flex justify-between">
-          <span className="type-small text-muted">{label}</span>
-          {pct !== null ? <span className="type-data text-muted">{pct}%</span> : null}
-        </div>
-      ) : null}
-      <div
-        role="progressbar"
-        aria-label={label}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={pct ?? undefined}
-        className="relative h-1.5 overflow-hidden rounded-full bg-rule"
-      >
+    <div
+      role="progressbar"
+      aria-label={label}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={pct ?? undefined}
+      className={cn("flex items-center gap-2 font-ocr text-xs tracking-normal", className)}
+    >
+      {showValue ? <span className="shrink-0 tracking-[0.08em] text-muted uppercase">{label}</span> : null}
+      <span aria-hidden className="flex-1 overflow-hidden whitespace-pre text-faint">
         {pct === null ? (
-          <div className="absolute inset-y-0 w-2/5 animate-[lp-indeterminate_1.1s_ease-in-out_infinite] bg-accent" />
+          <span className="inline-block animate-pulse glow">{"░▒▓█▓▒░"}</span>
         ) : (
-          <div className="h-full bg-accent transition-[width] duration-200" style={{ width: `${pct}%` }} />
+          <>
+            <b className="font-normal glow">{"█".repeat(filled)}</b>
+            {"░".repeat(cells - filled)}
+          </>
         )}
-      </div>
+      </span>
+      {pct !== null ? <span className="shrink-0 glow">{pct}%</span> : null}
     </div>
   );
 }
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div aria-hidden className={cn("animate-pulse rounded-sm bg-panel-2", className)} />;
+  return <div aria-hidden className={cn("animate-pulse border border-rule bg-panel", className)} />;
 }
 
 export interface EmptyStateProps {
@@ -60,12 +66,14 @@ export interface EmptyStateProps {
 }
 
 /** An empty screen is an invitation to act: say what is missing and what to do next. */
-export function EmptyState({ title, children, action, icon, className }: EmptyStateProps) {
+export function EmptyState({ title, children, action, className }: EmptyStateProps) {
   return (
-    <div className={cn("flex flex-col items-start gap-3 rounded-md border border-dashed border-rule-strong px-6 py-10", className)}>
-      {icon ? <div className="text-muted [&_svg]:size-6">{icon}</div> : null}
-      <h2 className="type-subheading">{title}</h2>
-      {children ? <div className="max-w-prose text-muted">{children}</div> : null}
+    <div className={cn("flex flex-col items-start gap-3 border border-dashed border-edge bg-sunken px-5 py-8", className)}>
+      <h2 className="font-ocr text-sm tracking-[0.08em] uppercase glow">
+        &gt; {title}
+        <span className="lp-cursor" aria-hidden />
+      </h2>
+      {children ? <div className="max-w-[68ch] text-muted">{children}</div> : null}
       {action ? <div className="mt-1 flex flex-wrap gap-2">{action}</div> : null}
     </div>
   );
@@ -81,25 +89,20 @@ export interface ErrorStateProps {
 
 export function ErrorState({ title, children, action, className }: ErrorStateProps) {
   return (
-    <div role="alert" className={cn("flex flex-col items-start gap-3 rounded-md border border-danger/40 bg-danger-soft px-6 py-8", className)}>
-      <AlertTriangle className="size-5 text-danger" aria-hidden />
-      <h2 className="type-subheading">{title}</h2>
-      {children ? <div className="max-w-prose text-muted">{children}</div> : null}
+    <div role="alert" className={cn("flex flex-col items-start gap-3 border border-bright bg-sunken px-5 py-6 shadow-[var(--crt-glow)]", className)}>
+      <h2 className="font-ocr text-sm tracking-[0.08em] uppercase glow">! {title}</h2>
+      {children ? <div className="max-w-[68ch] text-muted">{children}</div> : null}
       {action ? <div className="mt-1 flex flex-wrap gap-2">{action}</div> : null}
     </div>
   );
 }
 
-export function Notice({ tone = "info", title, children, className }: { tone?: "info" | "accent" | "danger"; title?: string; children: ReactNode; className?: string }) {
-  const toneClass = {
-    info: "border-info/35 bg-info-soft",
-    accent: "border-accent/35 bg-accent-soft",
-    danger: "border-danger/40 bg-danger-soft",
-  }[tone];
+/** Inline notice. "warn" uses the bright Seamless `.warn` frame. */
+export function Notice({ tone = "info", title, children, className }: { tone?: "info" | "warn"; title?: string; children: ReactNode; className?: string }) {
   return (
-    <div className={cn("rounded-md border px-4 py-3 text-sm", toneClass, className)}>
-      {title ? <p className="type-label mb-0.5 text-fg">{title}</p> : null}
-      <div className="text-muted [&_a]:text-fg [&_a]:underline">{children}</div>
+    <div className={cn("border px-3 py-2.5 font-ocr text-xs tracking-[0.04em]", tone === "warn" ? "border-bright text-bright" : "border-rule-strong bg-sunken text-muted", className)}>
+      {title ? <p className="mb-0.5 tracking-[0.1em] text-bright uppercase">{tone === "warn" ? "! " : "> "}{title}</p> : null}
+      <div className="[&_a]:text-bright [&_a]:underline">{children}</div>
     </div>
   );
 }

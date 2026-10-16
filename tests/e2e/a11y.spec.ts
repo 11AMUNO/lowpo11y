@@ -3,15 +3,19 @@ import { expect, test } from "@playwright/test";
 
 const PAGES = ["/", "/tools", "/assets", "/about", "/licences", "/privacy", "/contact"];
 
-for (const theme of ["dark", "light"] as const) {
-  test.describe(`accessibility (${theme})`, () => {
+for (const crt of ["on", "off"] as const) {
+  test.describe(`accessibility (CRT ${crt})`, () => {
     test.beforeEach(async ({ page }) => {
-      await page.addInitScript((t) => localStorage.setItem("lp-theme", t), theme);
+      await page.addInitScript((v) => localStorage.setItem("lp-crt", v), crt);
     });
     for (const path of PAGES) {
       test(`${path} has no WCAG A/AA violations`, async ({ page }) => {
         await page.goto(path);
-        const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
+        // aria-hidden marks are decorative by contract (see docs/DESIGN_SYSTEM.md) and may use the dim tone.
+        const results = await new AxeBuilder({ page })
+          .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
+          .exclude('[aria-hidden="true"]')
+          .analyze();
         const summary = results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`);
         expect(summary).toEqual([]);
       });

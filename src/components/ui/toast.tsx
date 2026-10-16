@@ -1,6 +1,5 @@
 "use client";
 
-import { CheckCircle2, AlertTriangle, Info, X } from "lucide-react";
 import { useSyncExternalStore } from "react";
 import { cn } from "@/lib/cn";
 
@@ -26,14 +25,14 @@ function dismiss(id: number) {
 }
 
 /**
- * Show a toast from anywhere (components, workers' callbacks, async handlers).
- * Errors stay until dismissed; other toasts auto-dismiss after 5s.
+ * Show a toast from anywhere (components, worker callbacks, async handlers).
+ * Errors stay until dismissed; others auto-dismiss.
  */
 export function toast(input: Omit<ToastItem, "id" | "tone"> & { tone?: ToastTone }) {
   const id = nextId++;
-  items = [...items.slice(-3), { tone: "info", ...input, id }];
+  items = [...items.slice(-2), { tone: "info", ...input, id }];
   emit();
-  if (input.tone !== "danger") setTimeout(() => dismiss(id), 5000);
+  if (input.tone !== "danger") setTimeout(() => dismiss(id), input.action ? 6000 : 2800);
   return id;
 }
 toast.ok = (title: string, description?: string) => toast({ tone: "ok", title, description });
@@ -47,55 +46,47 @@ const subscribe = (l: Listener) => {
 const getSnapshot = () => items;
 const getServerSnapshot = (): ToastItem[] => [];
 
-const icons = { info: Info, ok: CheckCircle2, danger: AlertTriangle };
-const toneClass = { info: "text-info", ok: "text-ok", danger: "text-danger" };
+const PREFIX: Record<ToastTone, string> = { info: ">", ok: ">", danger: "!" };
 
+/** Seamless-style toasts: centred at the bottom, black with a white frame and glow. */
 export function Toaster() {
   const list = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   return (
-    <div
-      className="pointer-events-none fixed right-4 bottom-4 z-[70] flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2"
-      aria-live="polite"
-      aria-relevant="additions"
-      role="status"
-    >
-      {list.map((t) => {
-        const Icon = icons[t.tone];
-        return (
-          <div
-            key={t.id}
-            role={t.tone === "danger" ? "alert" : undefined}
-            className="pointer-events-auto flex items-start gap-3 rounded-md border border-rule-strong bg-panel-2 p-3 data-[tone=danger]:border-danger/50 animate-[lp-pop_140ms_ease-out]"
-            data-tone={t.tone}
-          >
-            <Icon className={cn("mt-0.5 size-4 shrink-0", toneClass[t.tone])} aria-hidden />
-            <div className="min-w-0 flex-1">
-              <p className="type-label text-fg">{t.title}</p>
-              {t.description ? <p className="type-small mt-0.5 break-words text-muted">{t.description}</p> : null}
-              {t.action ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    t.action?.onClick();
-                    dismiss(t.id);
-                  }}
-                  className="type-label mt-2 text-accent hover:underline"
-                >
-                  {t.action.label}
-                </button>
-              ) : null}
-            </div>
-            <button
-              type="button"
-              onClick={() => dismiss(t.id)}
-              aria-label="Dismiss notification"
-              className="-m-1 grid size-6 place-items-center rounded-sm text-muted hover:bg-panel hover:text-fg"
-            >
-              <X className="size-3.5" />
-            </button>
+    <div className="pointer-events-none fixed bottom-6 left-1/2 z-[2000] flex w-[min(34rem,calc(100vw-2rem))] -translate-x-1/2 flex-col items-center gap-2" aria-live="polite" role="status">
+      {list.map((t) => (
+        <div
+          key={t.id}
+          role={t.tone === "danger" ? "alert" : undefined}
+          className="pointer-events-auto flex max-w-full items-start gap-3 border border-bright bg-bg px-4 py-2 font-ocr text-[13px] tracking-[0.08em] text-bright uppercase shadow-[var(--crt-glow)] animate-[lp-pop_160ms_ease-out]"
+        >
+          <div className="min-w-0">
+            <p>
+              {PREFIX[t.tone]} {t.title}
+            </p>
+            {t.description ? <p className="mt-0.5 break-words text-muted normal-case">{t.description}</p> : null}
+            {t.action ? (
+              <button
+                type="button"
+                onClick={() => {
+                  t.action?.onClick();
+                  dismiss(t.id);
+                }}
+                className="mt-1 cursor-pointer underline underline-offset-4"
+              >
+                {t.action.label}
+              </button>
+            ) : null}
           </div>
-        );
-      })}
+          <button
+            type="button"
+            onClick={() => dismiss(t.id)}
+            aria-label="Dismiss notification"
+            className={cn("-mr-1 cursor-pointer px-1 text-muted hover:text-bright")}
+          >
+            ×
+          </button>
+        </div>
+      ))}
     </div>
   );
 }

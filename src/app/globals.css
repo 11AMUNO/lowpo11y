@@ -1,148 +1,131 @@
 @import "tailwindcss";
-@import "@fontsource-variable/archivo/wdth.css";
-@import "@fontsource-variable/martian-mono/wdth.css";
+@import "@fontsource/ibm-plex-mono/300.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+@import "@fontsource/ibm-plex-mono/700.css";
+@import "@fontsource/share-tech-mono/400.css";
 
 /*
- * LOWPO11Y design tokens.
- * Dark "graphite workstation" is the default; light is "beige hardware".
- * Every colour is referenced through these variables — components never
- * hard-code hex values. See docs/DESIGN_SYSTEM.md.
+ * LOWPO11Y design tokens — matched to the owner's 11AM-Seamless terminal
+ * (palette, type and CRT treatment from BH-PromptEngine). Monochrome on void
+ * black; brightness and glow carry hierarchy instead of hue.
+ * Components reference these variables only. See docs/DESIGN_SYSTEM.md.
  */
-:root,
-:root[data-theme="dark"] {
+:root {
   color-scheme: dark;
-  --c-bg: #1b1a18; /* graphite */
-  --c-sunken: #141311; /* canvases, wells, code */
-  --c-panel: #23221e;
-  --c-panel-2: #2b2925; /* raised / hover */
-  --c-rule: #393731;
-  --c-rule-strong: #4f4b43;
-  --c-fg: #e8e3d6; /* bone */
-  --c-muted: #a29c8f; /* ash */
-  --c-faint: #888276;
-  --c-accent: #e2a03c; /* sodium amber */
-  --c-accent-strong: #f0b354;
-  --c-accent-ink: #1b1a18;
-  --c-accent-soft: rgb(226 160 60 / 0.13);
-  --c-danger: #e0644a; /* tally red — errors and destructive actions only */
-  --c-danger-soft: rgb(224 100 74 / 0.14);
-  --c-ok: #8fb573;
-  --c-ok-soft: rgb(143 181 115 / 0.14);
-  --c-info: #7fb2ac; /* phosphor — measured technical data, wireframes */
-  --c-info-soft: rgb(127 178 172 / 0.13);
-  --c-checker-a: #2a2824;
-  --c-checker-b: #34312c;
-  --c-scrim: rgb(10 9 8 / 0.72);
-}
-
-:root[data-theme="light"] {
-  color-scheme: light;
-  --c-bg: #e3dfd5; /* beige hardware plastic */
-  --c-sunken: #d6d1c5;
-  --c-panel: #ebe7de;
-  --c-panel-2: #f2efe8;
-  --c-rule: #c3bdb0;
-  --c-rule-strong: #a39d90;
-  --c-fg: #1f1e1b;
-  --c-muted: #57534b;
-  --c-faint: #645f57;
-  --c-accent: #8a4f05;
-  --c-accent-strong: #6f3f03;
-  --c-accent-ink: #fff8ec;
-  --c-accent-soft: rgb(138 79 5 / 0.12);
-  --c-danger: #a8321d;
-  --c-danger-soft: rgb(168 50 29 / 0.1);
-  --c-ok: #3f6b2a;
-  --c-ok-soft: rgb(63 107 42 / 0.12);
-  --c-info: #2f6b66;
-  --c-info-soft: rgb(47 107 102 / 0.1);
-  --c-checker-a: #d9d4c9;
-  --c-checker-b: #c9c3b6;
-  --c-scrim: rgb(31 30 27 / 0.55);
+  --c-bg: #000000; /* bg-void */
+  --c-panel: #070707; /* bg-panel */
+  --c-sunken: #030303; /* bg-code: wells, inputs, canvases */
+  --c-hover: #0d0d0d; /* row hover / active row */
+  --c-rule: #1f1f1f; /* line */
+  --c-rule-strong: #2c2c2c; /* line-2: panel borders */
+  --c-edge: #4a4a4a; /* text-dim: button borders, dim marks */
+  --c-edge-strong: #6b6b6b; /* input borders (≥3:1 non-text contrast) */
+  --c-edge-hover: #8a8a8a;
+  --c-fg: #f2f2f2; /* text-primary */
+  --c-bright: #ffffff; /* text-bright */
+  --c-muted: #8e8e8e; /* text-muted, 6.4:1 */
+  --c-faint: #4a4a4a; /* text-dim — decorative only, never informative text */
+  --c-scrim: rgb(0 0 0 / 0.78);
+  --crt-glow: 0 0 5px rgba(255, 255, 255, 0.45), 0 0 12px rgba(255, 255, 255, 0.15);
+  --crt-glow-soft: 0 0 3px rgba(255, 255, 255, 0.28);
+  --c-checker-a: #030303;
+  --c-checker-b: #0b0b0b;
 }
 
 @theme inline {
   --color-bg: var(--c-bg);
-  --color-sunken: var(--c-sunken);
   --color-panel: var(--c-panel);
-  --color-panel-2: var(--c-panel-2);
+  --color-sunken: var(--c-sunken);
+  --color-hover: var(--c-hover);
   --color-rule: var(--c-rule);
   --color-rule-strong: var(--c-rule-strong);
+  --color-edge: var(--c-edge);
+  --color-edge-strong: var(--c-edge-strong);
+  --color-edge-hover: var(--c-edge-hover);
   --color-fg: var(--c-fg);
+  --color-bright: var(--c-bright);
   --color-muted: var(--c-muted);
   --color-faint: var(--c-faint);
-  --color-accent: var(--c-accent);
-  --color-accent-strong: var(--c-accent-strong);
-  --color-accent-ink: var(--c-accent-ink);
-  --color-accent-soft: var(--c-accent-soft);
-  --color-danger: var(--c-danger);
-  --color-danger-soft: var(--c-danger-soft);
-  --color-ok: var(--c-ok);
-  --color-ok-soft: var(--c-ok-soft);
-  --color-info: var(--c-info);
-  --color-info-soft: var(--c-info-soft);
   --color-scrim: var(--c-scrim);
 
-  --font-sans: "Archivo Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "Martian Mono Variable", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-mono: "IBM Plex Mono", "OCR A Std", ui-monospace, Menlo, Consolas, monospace;
+  --font-ocr: "Share Tech Mono", "OCR A Std", "IBM Plex Mono", ui-monospace, monospace;
+  --font-sans: var(--font-mono);
 
-  --radius-xs: 2px;
-  --radius-sm: 3px;
-  --radius-md: 4px;
-  --radius-lg: 6px;
+  --radius-xs: 0px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
 }
 
-/*
- * Type scale (classic 12/14/16/18/21/24/36/48/72). Headings use Archivo's width
- * axis — expanded, like an equipment nameplate — rather than a second family.
- */
-@utility type-display-xl {
-  font-size: clamp(2.5rem, 4.2vw + 1rem, 4.5rem);
-  line-height: 0.98;
-  font-stretch: 125%;
-  font-weight: 800;
-  letter-spacing: -0.012em;
-}
+/* ---- Type ---------------------------------------------------------------- */
+/* Share Tech Mono ("OCR") for titles, labels, buttons and readouts; IBM Plex Mono for content. */
 @utility type-display {
-  font-size: clamp(2rem, 2vw + 1.1rem, 3rem);
-  line-height: 1.03;
-  font-stretch: 122%;
-  font-weight: 760;
-  letter-spacing: -0.008em;
+  font-family: var(--font-ocr);
+  font-size: clamp(1.75rem, 1.6vw + 1.1rem, 2.5rem);
+  line-height: 1.1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-bright);
+  text-shadow: var(--crt-glow);
 }
 @utility type-title {
-  font-size: 1.5rem;
-  line-height: 1.18;
-  font-stretch: 116%;
-  font-weight: 700;
+  font-family: var(--font-ocr);
+  font-size: 1.125rem;
+  line-height: 1.3;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--c-bright);
+  text-shadow: var(--crt-glow);
 }
 @utility type-heading {
-  font-size: 1.3125rem;
-  line-height: 1.24;
-  font-stretch: 110%;
-  font-weight: 650;
-}
-@utility type-subheading {
-  font-size: 1.125rem;
+  font-family: var(--font-ocr);
+  font-size: 0.9375rem;
   line-height: 1.35;
-  font-stretch: 104%;
-  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-bright);
+}
+/* "// PANEL" titles */
+@utility type-panel {
+  font-family: var(--font-ocr);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-muted);
+  font-weight: 400;
 }
 @utility type-label {
-  font-size: 0.875rem;
-  line-height: 1.3;
-  font-weight: 560;
+  font-family: var(--font-ocr);
+  font-size: 0.75rem;
+  line-height: 1.35;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--c-muted);
 }
 @utility type-small {
-  font-size: 0.8125rem;
-  line-height: 1.4;
+  font-size: 0.75rem;
+  line-height: 1.5;
 }
 @utility type-data {
-  font-family: var(--font-mono);
+  font-family: var(--font-ocr);
   font-size: 0.75rem;
   line-height: 1.45;
-  font-stretch: 88%;
+  letter-spacing: 0.06em;
   font-variant-numeric: tabular-nums;
+}
+@utility type-ocr {
+  font-family: var(--font-ocr);
+  letter-spacing: 0.06em;
+}
+@utility glow {
+  color: var(--c-bright);
+  text-shadow: var(--crt-glow);
+}
+@utility glow-box {
+  box-shadow: var(--crt-glow);
 }
 @utility tabular {
   font-variant-numeric: tabular-nums;
@@ -174,64 +157,105 @@
   html {
     background: var(--c-bg);
     color: var(--c-fg);
-    font-family: var(--font-sans);
-    font-stretch: 100%;
+    font-family: var(--font-mono);
     -webkit-text-size-adjust: 100%;
-    text-rendering: optimizeLegibility;
   }
   body {
+    margin: 0;
     background: var(--c-bg);
     color: var(--c-fg);
-    font-size: 1rem;
+    font-size: 0.875rem;
     line-height: 1.55;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-shadow: var(--crt-glow-soft);
   }
   ::selection {
-    background: var(--c-accent);
-    color: var(--c-accent-ink);
+    background: #fff;
+    color: #000;
+    text-shadow: none;
   }
   :focus-visible {
-    outline: 2px solid var(--c-accent-strong);
+    outline: 1px solid #fff;
     outline-offset: 2px;
-  }
-  /* Radix and native controls inherit our focus ring. */
-  [data-radix-collection-item]:focus-visible {
-    outline-offset: -2px;
+    box-shadow: var(--crt-glow);
   }
   a {
-    text-underline-offset: 0.18em;
+    text-underline-offset: 0.2em;
     text-decoration-thickness: 1px;
   }
   hr {
-    border-color: var(--c-rule);
+    border-color: var(--c-rule-strong);
   }
   code,
   kbd,
   pre,
   samp {
     font-family: var(--font-mono);
-    font-stretch: 92%;
   }
   input,
   textarea,
   select,
   button {
     font: inherit;
+    letter-spacing: inherit;
+  }
+  img {
+    text-shadow: none;
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
+/* ---- CRT overlay: vignette + scanlines (toggle with data-crt="off") ------ */
+html:not([data-crt="off"]) body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1000;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+}
+html:not([data-crt="off"]) body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1001;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0.02) 0px,
+    rgba(255, 255, 255, 0.02) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  animation: lp-flicker 6s infinite steps(1);
+}
+html[data-crt="off"] body {
+  text-shadow: none;
 }
 
+@keyframes lp-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  47% {
+    opacity: 0.85;
+  }
+  48% {
+    opacity: 1;
+  }
+  82% {
+    opacity: 0.92;
+  }
+  83% {
+    opacity: 1;
+  }
+}
+@keyframes lp-blink {
+  50% {
+    opacity: 0;
+  }
+}
 @keyframes lp-fade {
   from {
     opacity: 0;
@@ -243,7 +267,7 @@
 @keyframes lp-pop {
   from {
     opacity: 0;
-    transform: scale(0.985);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -267,4 +291,90 @@
   to {
     transform: translateX(250%);
   }
+}
+
+/* Blinking block cursor used after telemetry lines. */
+.lp-cursor {
+  display: inline-block;
+  width: 0.6em;
+  height: 1.05em;
+  background: var(--c-bright);
+  vertical-align: -0.15em;
+  margin-left: 0.25em;
+  box-shadow: var(--crt-glow);
+  animation: lp-blink 1.05s steps(1) infinite;
+}
+
+/* Thin scrollbars inside panels, like Seamless. */
+.lp-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #333 transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  html body::after,
+  .lp-cursor {
+    animation: none !important;
+  }
+}
+
+/* Range input after Seamless: 1px track, white rectangular thumb with glow. */
+.lp-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 18px;
+  background: transparent;
+  margin: 0.15rem 0 0;
+  cursor: pointer;
+}
+.lp-range::-webkit-slider-runnable-track {
+  height: 1px;
+  background: var(--c-edge-strong);
+}
+.lp-range::-moz-range-track {
+  height: 1px;
+  background: var(--c-edge-strong);
+}
+.lp-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px;
+  height: 16px;
+  background: #fff;
+  border: 0;
+  border-radius: 0;
+  margin-top: -8px;
+  box-shadow: var(--crt-glow);
+}
+.lp-range::-moz-range-thumb {
+  width: 10px;
+  height: 16px;
+  background: #fff;
+  border: 0;
+  border-radius: 0;
+  box-shadow: var(--crt-glow);
+}
+.lp-range:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+.lp-range:focus-visible::-webkit-slider-thumb {
+  outline: 1px solid #fff;
+  outline-offset: 2px;
+}
+.lp-range:focus-visible::-moz-range-thumb {
+  outline: 1px solid #fff;
+  outline-offset: 2px;
+}
+.lp-range:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }

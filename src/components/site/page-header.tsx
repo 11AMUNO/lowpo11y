@@ -7,18 +7,27 @@ export interface PageHeaderProps {
   description?: ReactNode;
   breadcrumbs?: Crumb[];
   actions?: ReactNode;
+  /** Telemetry line, e.g. "11 TEXTURES // FILTERED BY METAL". Rendered after a ">" prompt. */
+  telemetry?: ReactNode;
   className?: string;
   children?: ReactNode;
 }
 
-export function PageHeader({ title, description, breadcrumbs, actions, className, children }: PageHeaderProps) {
+/** Page title block in the Seamless header idiom: OCR title with glow, then a telemetry line. */
+export function PageHeader({ title, description, breadcrumbs, actions, telemetry, className, children }: PageHeaderProps) {
   return (
-    <div className={cn("border-b border-rule pt-8 pb-8 sm:pt-10", className)}>
+    <div className={cn("border-b border-rule-strong pt-6 pb-6 sm:pt-8", className)}>
       {breadcrumbs ? <Breadcrumbs items={breadcrumbs} /> : null}
       <div className="mt-4 flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
         <div className="max-w-3xl">
           <h1 className="type-display">{title}</h1>
-          {description ? <p className="mt-3 max-w-[62ch] text-lg leading-relaxed text-muted">{description}</p> : null}
+          {description ? <p className="mt-3 max-w-[70ch] text-[15px] leading-relaxed text-fg/85">{description}</p> : null}
+          {telemetry ? (
+            <p className="mt-3 font-ocr text-[13px] tracking-[0.08em] text-muted uppercase">
+              &gt; {telemetry}
+              <span className="lp-cursor" aria-hidden />
+            </p>
+          ) : null}
         </div>
         {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
       </div>
@@ -28,18 +37,19 @@ export function PageHeader({ title, description, breadcrumbs, actions, className
 }
 
 export function Container({ children, className, wide }: { children: ReactNode; className?: string; wide?: boolean }) {
-  return <div className={cn("mx-auto w-full px-4 sm:px-6", wide ? "max-w-[90rem]" : "max-w-6xl", className)}>{children}</div>;
+  return <div className={cn("mx-auto w-full px-4 sm:px-6", wide ? "max-w-[105rem]" : "max-w-6xl", className)}>{children}</div>;
 }
 
 export function Prose({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <div
       className={cn(
-        "max-w-[68ch] text-[1.0625rem] leading-[1.65] text-fg/90",
-        "[&_h2]:type-title [&_h2]:mt-12 [&_h2]:mb-3 [&_h2]:text-fg [&_h3]:type-subheading [&_h3]:mt-8 [&_h3]:mb-2 [&_h3]:text-fg",
-        "[&_p]:my-4 [&_ul]:my-4 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:my-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-1.5",
-        "[&_a]:text-accent [&_a]:underline [&_strong]:font-[620] [&_strong]:text-fg",
-        "[&_code]:rounded-xs [&_code]:bg-sunken [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[0.85em]",
+        "max-w-[74ch] text-[15px] leading-[1.7] text-fg/90",
+        "[&_h2]:type-title [&_h2]:mt-10 [&_h2]:mb-3 [&_h2]:before:content-['//_'] [&_h2]:before:text-muted",
+        "[&_h3]:type-heading [&_h3]:mt-7 [&_h3]:mb-2",
+        "[&_p]:my-4 [&_ul]:my-4 [&_ul]:list-['>_'] [&_ul]:pl-5 [&_ol]:my-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-1.5 [&_li]:pl-1 [&_li::marker]:text-muted",
+        "[&_a]:text-bright [&_a]:underline [&_strong]:font-medium [&_strong]:text-bright",
+        "[&_code]:border [&_code]:border-rule-strong [&_code]:bg-sunken [&_code]:px-1 [&_code]:text-[0.9em]",
         className,
       )}
     >

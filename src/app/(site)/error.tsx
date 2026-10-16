@@ -20,7 +20,7 @@ export default function SiteError({ error, reset }: { error: Error & { digest?: 
       >
         <p>
           Something went wrong on our side while building this page. Trying again usually fixes it.
-          {error.digest ? <span className="type-data mt-2 block text-muted">Reference {error.digest}</span> : null}
+          {error.digest ? <span className="type-data mt-2 block text-muted">REF {error.digest}</span> : null}
         </p>
       </ErrorState>
     </div>

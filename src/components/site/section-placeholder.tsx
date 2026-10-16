@@ -26,7 +26,7 @@ export function SectionPlaceholder({
   return (
     <Container wide>
       <PageHeader title={title} description={description} breadcrumbs={[{ label: "Home", href: "/" }, { label: breadcrumb }]} />
-      <div className="py-10">
+      <div className="py-6">
         <EmptyState
           title={emptyTitle}
           action={links.map((l) => (

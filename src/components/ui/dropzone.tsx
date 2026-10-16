@@ -1,6 +1,5 @@
 "use client";
 
-import { Upload } from "lucide-react";
 import { useCallback, useId, useRef, useState, type DragEvent, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { formatBytes } from "@/lib/format";
@@ -20,6 +19,8 @@ export interface DropzoneProps {
   className?: string;
   compact?: boolean;
   disabled?: boolean;
+  /** Extra buttons rendered under the label (e.g. "+ FOLDER"). */
+  children?: ReactNode;
 }
 
 function matches(file: File, accept?: string, extensions?: string[]) {
@@ -34,6 +35,7 @@ function matches(file: File, accept?: string, extensions?: string[]) {
   });
 }
 
+/** "[ DROP FILES ]" well (Seamless `.drop`). */
 export function Dropzone({
   onFiles,
   onReject,
@@ -42,22 +44,24 @@ export function Dropzone({
   multiple = false,
   maxBytes,
   maxFiles,
-  label = "Drop files here or choose files",
+  label = "Drop files",
   hint,
   className,
   compact,
   disabled,
+  children,
 }: DropzoneProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
   const id = useId();
 
   const handle = useCallback(
-    (list: FileList | null) => {
+    (list: FileList | File[] | null) => {
       if (!list || disabled) return;
       const ok: File[] = [];
       const reasons: string[] = [];
       for (const f of Array.from(list)) {
+        if (f.name.startsWith(".")) continue;
         if (!matches(f, accept, extensions)) reasons.push(`${f.name}: unsupported file type`);
         else if (maxBytes && f.size > maxBytes) reasons.push(`${f.name}: larger than ${formatBytes(maxBytes)}`);
         else ok.push(f);
@@ -88,28 +92,28 @@ export function Dropzone({
       onDragLeave={() => setOver(false)}
       onDrop={onDrop}
       className={cn(
-        "relative flex flex-col items-center justify-center gap-2 rounded-md border border-dashed border-rule-strong bg-sunken text-center transition-colors",
-        compact ? "px-4 py-4" : "px-6 py-10",
-        over && "border-accent bg-accent-soft",
-        disabled && "opacity-50",
+        "flex flex-col items-center justify-center gap-1.5 border border-dashed border-edge bg-sunken text-center transition-[border-color,box-shadow] duration-150 hover:border-bright hover:shadow-[var(--crt-glow)]",
+        compact ? "px-3 py-3" : "px-3 py-5",
+        over && "border-solid border-bright shadow-[var(--crt-glow)]",
+        disabled && "pointer-events-none opacity-40",
         className,
       )}
     >
-      <Upload className="size-5 text-muted" aria-hidden />
       <button
         type="button"
         disabled={disabled}
         onClick={() => inputRef.current?.click()}
-        className="type-label rounded-sm text-fg underline decoration-rule-strong underline-offset-4 hover:decoration-accent"
+        className="cursor-pointer font-ocr tracking-[0.1em] uppercase glow"
         aria-describedby={hint ? `${id}-hint` : undefined}
       >
-        {label}
+        [ {label} ]
       </button>
       {hint ? (
-        <p id={`${id}-hint`} className="type-small max-w-sm text-muted">
+        <p id={`${id}-hint`} className="max-w-sm font-ocr text-[11px] tracking-[0.04em] text-muted">
           {hint}
         </p>
       ) : null}
+      {children ? <div className="mt-1 flex gap-2">{children}</div> : null}
       <input
         ref={inputRef}
         type="file"

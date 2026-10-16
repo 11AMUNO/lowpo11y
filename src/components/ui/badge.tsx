@@ -1,15 +1,12 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
-export type BadgeTone = "neutral" | "accent" | "ok" | "danger" | "info" | "outline";
+export type BadgeTone = "neutral" | "bright" | "outline";
 
 const tones: Record<BadgeTone, string> = {
-  neutral: "bg-panel-2 text-fg border-rule",
-  accent: "bg-accent-soft text-accent border-accent/35",
-  ok: "bg-ok-soft text-ok border-ok/35",
-  danger: "bg-danger-soft text-danger border-danger/35",
-  info: "bg-info-soft text-info border-info/35",
-  outline: "bg-transparent text-muted border-rule-strong",
+  neutral: "border-rule-strong text-muted",
+  bright: "border-bright text-bright [text-shadow:var(--crt-glow)]",
+  outline: "border-edge text-muted",
 };
 
 export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
@@ -17,11 +14,12 @@ export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   icon?: ReactNode;
 }
 
+/** Bordered OCR tag, e.g. CC0, DEMO, READY. */
 export function Badge({ tone = "neutral", icon, className, children, ...props }: BadgeProps) {
   return (
     <span
       className={cn(
-        "inline-flex h-5 items-center gap-1 rounded-xs border px-1.5 text-[0.6875rem] leading-none font-[580] whitespace-nowrap [&_svg]:size-3",
+        "inline-flex h-5 items-center gap-1 border bg-sunken px-1.5 font-ocr text-[11px] leading-none tracking-[0.06em] whitespace-nowrap uppercase [&_svg]:size-3",
         tones[tone],
         className,
       )}
@@ -33,16 +31,7 @@ export function Badge({ tone = "neutral", icon, className, children, ...props }:
   );
 }
 
-/** File-format badge, e.g. GLB, PNG, BLEND. Shown in the mono face because it is literal data. */
+/** File-format tag, e.g. GLB, PNG, FBX. */
 export function FormatBadge({ format, className }: { format: string; className?: string }) {
-  return (
-    <span
-      className={cn(
-        "type-data inline-flex h-5 items-center rounded-xs border border-rule-strong px-1.5 text-[0.625rem] text-muted",
-        className,
-      )}
-    >
-      {format.toUpperCase()}
-    </span>
-  );
+  return <Badge className={className}>{format.toUpperCase()}</Badge>;
 }

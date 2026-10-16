@@ -1,11 +1,12 @@
-import { Search } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { buttonClasses } from "@/components/ui/button";
+import { Panel } from "@/components/ui/panel";
+import { Banner } from "@/components/site/logo";
 import { Container } from "@/components/site/page-header";
 import { TexturePage, type TexturePageTile } from "@/components/site/texture-page";
 import { DEMO_TEXTURES } from "@/lib/demo/textures";
-import { TOOLS, TOOL_CATEGORY_LABEL } from "@/features/tools/registry";
+import { TOOLS } from "@/features/tools/registry";
 import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -14,11 +15,11 @@ export const metadata: Metadata = {
 };
 
 const PIPELINE = [
-  { step: "Find", text: "Search models and textures by style, setting, size and licence." },
-  { step: "Inspect", text: "Orbit the model, check triangle counts and read the texture at native resolution." },
-  { step: "Process", text: "Resize, dither, tile, recolour or pack it into an atlas — locally, in your browser." },
-  { step: "Export", text: "Download PNGs, GLBs and a manifest with exact sizes and licence notes." },
-  { step: "Use it", text: "Drop it into Godot, Blender or Unity with import settings that keep pixels crisp." },
+  { n: "01", step: "Find", text: "Search models and textures by style, setting, size and licence." },
+  { n: "02", step: "Inspect", text: "Orbit the model, check triangle counts, read the texture at native resolution." },
+  { n: "03", step: "Process", text: "Resize, dither, tile, recolour or pack into an atlas, on your machine." },
+  { n: "04", step: "Export", text: "Download PNG, GLB and a manifest with exact sizes and licence notes." },
+  { n: "05", step: "Use it", text: "Import into Godot, Blender or Unity with settings that keep pixels crisp." },
 ];
 
 export default function HomePage() {
@@ -28,112 +29,119 @@ export default function HomePage() {
     size: 128,
     alpha: t.hasAlpha,
   }));
-  // Fill the last row so the page is a clean rectangle.
   while (tiles.length % 4 !== 0) tiles.push({ src: null, title: "free slot", size: 128 });
+  const ready = TOOLS.filter((t) => t.status === "available").length;
 
   return (
-    <>
-      <section className="border-b border-rule">
-        <Container wide className="grid items-center gap-x-14 gap-y-12 py-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,34rem)] lg:py-20">
-          <div className="max-w-2xl">
-            <h1 className="type-display-xl text-balance">Free low-poly assets and the tools to make your own</h1>
-            <p className="mt-6 max-w-[54ch] text-lg leading-relaxed text-muted">
-              Download models and textures with clear licences, then resize, dither, tile and pack textures in your
-              browser. Files you open in the tools never leave your device.
+    <Container wide>
+      <section className="pt-8 pb-6">
+        <h1 className="sr-only">LOWPO11Y: free low-poly assets and the tools to make your own</h1>
+        <Banner />
+        <p className="mt-4 font-ocr text-[13px] tracking-[0.08em] text-muted uppercase">
+          &gt; <b className="font-normal glow">Low-poly asset terminal</b> // v0.1 // free assets + local tools // files never leave this machine
+          <span className="lp-cursor" aria-hidden />
+        </p>
+        <ul className="mt-3 flex flex-wrap gap-x-6 gap-y-1 font-ocr text-[13px] tracking-[0.06em] text-muted uppercase">
+          <li>
+            Textures: <strong className="font-normal glow">{DEMO_TEXTURES.length}</strong>
+          </li>
+          <li>
+            Models: <strong className="font-normal glow">0</strong>
+          </li>
+          <li>
+            Tools ready: <strong className="font-normal glow">{ready}</strong>/{TOOLS.length}
+          </li>
+          <li>
+            Licence shown: <strong className="font-normal glow">always</strong>
+          </li>
+        </ul>
+      </section>
+
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,36rem)]">
+        <div className="flex flex-col gap-4">
+          <Panel title="Search the library" labelledBy="home-search-title">
+            <p className="mb-3 text-[15px] leading-relaxed text-fg/90">
+              Free low-poly models and textures with clear licences, plus browser tools to resize, dither, tile and pack
+              them. Nothing you open in a tool is uploaded.
             </p>
-            <form action="/assets" method="get" role="search" className="mt-8 flex max-w-xl gap-2">
+            <form action="/assets" method="get" role="search" className="flex gap-2">
               <label htmlFor="home-search" className="sr-only">
                 Search the library
               </label>
-              <div className="relative flex-1">
-                <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted" aria-hidden />
+              <div className="flex flex-1 items-center border border-edge-strong bg-sunken focus-within:border-bright focus-within:shadow-[var(--crt-glow)] hover:border-edge-hover">
+                <span aria-hidden className="px-2 font-ocr text-muted">
+                  &gt;
+                </span>
                 <input
                   id="home-search"
                   name="q"
                   type="search"
-                  placeholder="Crate, rusted metal, CRT…"
-                  className="h-12 w-full rounded-sm border border-rule-strong bg-sunken pr-3 pl-10 text-base text-fg placeholder:text-faint hover:border-fg/35 focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/35 focus-visible:outline-none"
+                  placeholder="crate, rusted metal, crt…"
+                  className="h-10 min-w-0 flex-1 bg-transparent pr-2 text-[14px] text-bright caret-white outline-none placeholder:text-faint"
                 />
               </div>
               <button type="submit" className={buttonClasses("primary", "lg")}>
-                Search
+                [ Search ]
               </button>
             </form>
-            <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm">
-              <Link href="/textures" className="text-fg underline decoration-rule-strong underline-offset-4 hover:decoration-accent">
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Link href="/textures" className={buttonClasses("secondary", "md")}>
                 Browse textures
               </Link>
-              <Link href="/tools" className="text-fg underline decoration-rule-strong underline-offset-4 hover:decoration-accent">
-                Open the tools
+              <Link href="/assets" className={buttonClasses("secondary", "md")}>
+                Browse models
               </Link>
-              <Link href="/scene-builder" className="text-fg underline decoration-rule-strong underline-offset-4 hover:decoration-accent">
-                Try the scene builder
+              <Link href="/tools" className={buttonClasses("secondary", "md")}>
+                Open tools
+              </Link>
+              <Link href="/scene-builder" className={buttonClasses("secondary", "md")}>
+                Scene builder
               </Link>
             </div>
-          </div>
-          <TexturePage
-            tiles={tiles}
-            columns={4}
-            cell={128}
-            caption="Texture page of demo textures generated by LOWPO11Y (CC0)"
-            className="w-full"
-          />
-        </Container>
-      </section>
+          </Panel>
 
-      <section aria-labelledby="pipeline-title" className="border-b border-rule bg-panel/40">
-        <Container wide className="py-14">
-          <h2 id="pipeline-title" className="type-title">
-            From library to engine
-          </h2>
-          <ol className="mt-8 grid gap-px overflow-hidden rounded-md border border-rule bg-rule sm:grid-cols-2 lg:grid-cols-5">
-            {PIPELINE.map((p, i) => (
-              <li key={p.step} className="bg-bg p-5">
-                <span className="type-data text-accent">{String(i + 1).padStart(2, "0")}</span>
-                <h3 className="type-subheading mt-2">{p.step}</h3>
-                <p className="type-small mt-1.5 text-muted">{p.text}</p>
-              </li>
-            ))}
-          </ol>
-        </Container>
-      </section>
-
-      <section aria-labelledby="tools-title">
-        <Container wide className="py-14">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <h2 id="tools-title" className="type-title">
-                Tools that run in your browser
-              </h2>
-              <p className="mt-2 max-w-[60ch] text-muted">
-                No account, no upload, no watermark. Settings are remembered on this device; your images are not.
-              </p>
-            </div>
-            <Link href="/tools" className={buttonClasses("secondary", "md")}>
-              All tools
-            </Link>
-          </div>
-          <ul className="mt-8 grid gap-x-10 border-t border-rule md:grid-cols-2">
-            {TOOLS.map((t) => (
-              <li key={t.slug} className="border-b border-rule py-4">
-                <div className="flex items-baseline justify-between gap-4">
-                  {t.status === "available" ? (
-                    <Link href={t.route} className="type-subheading hover:text-accent">
-                      {t.name}
-                    </Link>
-                  ) : (
-                    <span className="type-subheading text-muted">{t.name}</span>
-                  )}
-                  <span className="type-small shrink-0 text-muted">
-                    {t.status === "available" ? TOOL_CATEGORY_LABEL[t.category] : "In development"}
+          <Panel title={<>Pipeline <span className="tracking-[0.06em] text-muted normal-case">library → engine</span></>}>
+            <ol>
+              {PIPELINE.map((p) => (
+                <li key={p.n} className="mb-2 flex items-baseline gap-3 border border-rule-strong bg-sunken px-2.5 py-2 last:mb-0">
+                  <span aria-hidden className="font-ocr text-[13px] tracking-[0.1em] text-faint">
+                    {p.n}
                   </span>
-                </div>
-                <p className="type-small mt-1 max-w-[62ch] text-muted">{t.summary}</p>
-              </li>
-            ))}
-          </ul>
-        </Container>
-      </section>
-    </>
+                  <span className="w-20 shrink-0 font-ocr text-[13px] tracking-[0.1em] uppercase glow">{p.step}</span>
+                  <span className="text-[13px] text-muted">{p.text}</span>
+                </li>
+              ))}
+            </ol>
+          </Panel>
+        </div>
+
+        <Panel title="Texture page">
+          <TexturePage tiles={tiles} columns={4} cell={128} label="TPAGE 0" className="w-full" />
+          <p className="mt-2 font-ocr text-[11px] tracking-[0.04em] text-muted">
+            Demo textures generated by LOWPO11Y for testing // CC0
+          </p>
+        </Panel>
+      </div>
+
+      <Panel title={<>Tools <span className="tracking-[0.06em] text-muted normal-case">run on your machine</span></>} className="mt-4" aside={<Link href="/tools" className="font-ocr text-xs tracking-[0.08em] text-muted uppercase hover:text-bright">[ All tools ]</Link>}>
+        <ul className="grid gap-x-6 md:grid-cols-2">
+          {TOOLS.map((t) => (
+            <li key={t.slug} className="flex items-baseline justify-between gap-4 border-b border-dashed border-rule-strong py-2.5">
+              <div className="min-w-0">
+                {t.status === "available" ? (
+                  <Link href={t.route} className="font-ocr text-[13px] tracking-[0.08em] uppercase glow hover:underline">
+                    {t.name}
+                  </Link>
+                ) : (
+                  <span className="font-ocr text-[13px] tracking-[0.08em] text-fg uppercase">{t.name}</span>
+                )}
+                <p className="mt-0.5 text-xs text-muted">{t.summary}</p>
+              </div>
+              <span className="shrink-0 font-ocr text-[11px] tracking-[0.06em] text-muted uppercase">{t.status === "available" ? "Ready" : "In dev"}</span>
+            </li>
+          ))}
+        </ul>
+      </Panel>
+    </Container>
   );
 }

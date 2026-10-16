@@ -1,45 +1,31 @@
 "use client";
 
 import { Dialog as RDialog } from "radix-ui";
-import { Box, Code2, CornerDownLeft, FileText, FolderOpen, Image as ImageIcon, Layers, PlayCircle, Search, User, Wrench, type LucideIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { Kbd } from "@/components/ui/kbd";
 import { cn } from "@/lib/cn";
 import { TOOLS } from "@/features/tools/registry";
 import type { SearchResult } from "@/lib/search/types";
-import { PRIMARY_NAV, FOOTER_NAV } from "./nav";
+import { FOOTER_NAV, PRIMARY_NAV } from "./nav";
 
 const KIND_LABEL: Record<SearchResult["kind"], string> = {
-  page: "Page",
-  tool: "Tool",
-  asset: "Asset",
-  texture: "Texture",
-  collection: "Collection",
-  shader: "Shader",
-  starter: "Starter project",
-  tutorial: "Tutorial",
-  creator: "Creator",
-};
-
-const KIND_ICON: Record<SearchResult["kind"], LucideIcon> = {
-  page: FileText,
-  tool: Wrench,
-  asset: Box,
-  texture: ImageIcon,
-  collection: Layers,
-  shader: Code2,
-  starter: FolderOpen,
-  tutorial: PlayCircle,
-  creator: User,
+  page: "PAGE",
+  tool: "TOOL",
+  asset: "ASSET",
+  texture: "TEXTURE",
+  collection: "COLLECTION",
+  shader: "SHADER",
+  starter: "STARTER",
+  tutorial: "TUTORIAL",
+  creator: "CREATOR",
 };
 
 function buildStaticIndex(): SearchResult[] {
   const pages = new Map<string, SearchResult>();
   for (const n of PRIMARY_NAV) pages.set(n.href, { id: `page:${n.href}`, kind: "page", title: n.label, subtitle: n.description, href: n.href });
   for (const group of FOOTER_NAV)
-    for (const n of group.items)
-      if (!pages.has(n.href)) pages.set(n.href, { id: `page:${n.href}`, kind: "page", title: n.label, href: n.href });
+    for (const n of group.items) if (!pages.has(n.href)) pages.set(n.href, { id: `page:${n.href}`, kind: "page", title: n.label, href: n.href });
   const tools: SearchResult[] = TOOLS.filter((t) => t.status === "available").map((t) => ({
     id: `tool:${t.slug}`,
     kind: "tool",
@@ -59,15 +45,6 @@ function matchesQuery(r: SearchResult, q: string) {
     .split(/\s+/)
     .filter(Boolean)
     .every((word) => hay.includes(word));
-}
-
-function KindIcon({ kind }: { kind: SearchResult["kind"] }) {
-  const Icon = KIND_ICON[kind];
-  return (
-    <span className="grid size-9 shrink-0 place-items-center rounded-xs border border-rule bg-sunken text-muted">
-      <Icon className="size-4" aria-hidden />
-    </span>
-  );
 }
 
 export function SearchCommand({ className }: { className?: string }) {
@@ -156,19 +133,17 @@ export function SearchCommand({ className }: { className?: string }) {
     <RDialog.Root open={open} onOpenChange={setOpen}>
       <RDialog.Trigger
         className={cn(
-          "flex h-8 items-center gap-2 rounded-sm border border-rule-strong bg-sunken pr-1.5 pl-2.5 text-[0.8125rem] text-muted transition-colors hover:border-fg/35 hover:text-fg",
+          "flex h-8 cursor-pointer items-center gap-3 border border-edge bg-sunken px-2.5 font-ocr text-xs tracking-[0.08em] text-muted uppercase transition-colors hover:border-edge-hover hover:text-bright",
           className,
         )}
       >
-        <Search className="size-3.5" aria-hidden />
-        <span className="hidden sm:inline">Search</span>
-        <span className="sr-only sm:hidden">Search</span>
-        <Kbd className="ml-4 hidden sm:inline-flex">⌘K</Kbd>
+        <span>&gt; Search</span>
+        <Kbd className="hidden sm:inline-flex">⌘K</Kbd>
       </RDialog.Trigger>
       <RDialog.Portal>
         <RDialog.Overlay className="fixed inset-0 z-50 bg-scrim" />
         <RDialog.Content
-          className="fixed top-[9dvh] left-1/2 z-50 flex max-h-[76dvh] w-[calc(100vw-2rem)] max-w-2xl -translate-x-1/2 flex-col overflow-hidden rounded-lg border border-rule-strong bg-panel focus:outline-none"
+          className="fixed top-[9dvh] left-1/2 z-50 flex max-h-[76dvh] w-[calc(100vw-2rem)] max-w-2xl -translate-x-1/2 flex-col overflow-hidden border border-bright bg-panel shadow-[var(--crt-glow)] focus:outline-none"
           onOpenAutoFocus={(e) => {
             e.preventDefault();
             (e.currentTarget as HTMLElement).querySelector("input")?.focus();
@@ -178,8 +153,10 @@ export function SearchCommand({ className }: { className?: string }) {
           <RDialog.Description className="sr-only">
             Search assets, textures, tools and pages. Use the arrow keys to move and Enter to open.
           </RDialog.Description>
-          <div className="flex items-center gap-3 border-b border-rule px-4">
-            <Search className="size-4 shrink-0 text-muted" aria-hidden />
+          <div className="flex items-center gap-2 border-b border-dashed border-rule-strong px-3">
+            <span aria-hidden className="font-ocr text-muted">
+              &gt;
+            </span>
             <input
               role="combobox"
               aria-expanded
@@ -187,21 +164,21 @@ export function SearchCommand({ className }: { className?: string }) {
               aria-activedescendant={results[active] ? `${listId}-${active}` : undefined}
               aria-autocomplete="list"
               aria-label="Search"
-              placeholder="Search assets, textures, tools…"
+              placeholder="search assets, textures, tools…"
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value);
                 setActive(0);
               }}
               onKeyDown={onKeyDown}
-              className="h-14 flex-1 bg-transparent text-base text-fg outline-none placeholder:text-faint"
+              className="h-12 flex-1 bg-transparent text-[15px] text-bright caret-white outline-none placeholder:text-faint"
             />
-            {loading ? <span className="type-small text-muted">Searching…</span> : null}
+            {loading ? <span className="font-ocr text-[11px] tracking-[0.08em] text-muted">SEARCHING…</span> : null}
           </div>
-          <ul ref={listRef} id={listId} role="listbox" aria-label="Results" className="min-h-0 flex-1 overflow-y-auto p-1.5">
+          <ul ref={listRef} id={listId} role="listbox" aria-label="Results" className="lp-scroll min-h-0 flex-1 overflow-y-auto py-1">
             {results.length === 0 ? (
-              <li className="px-3 py-8 text-center text-muted">
-                No matches for “{query.trim()}”. Try a material (“rust”), an object (“crate”) or a tool (“atlas”).
+              <li className="px-4 py-8 font-ocr text-xs tracking-[0.06em] text-muted uppercase">
+                &gt; No matches for “{query.trim()}” // try a material (rust), an object (crate) or a tool (atlas)
               </li>
             ) : (
               results.map((r, i) => (
@@ -214,26 +191,23 @@ export function SearchCommand({ className }: { className?: string }) {
                   onMouseMove={() => setActive(i)}
                   onClick={() => go(r)}
                   className={cn(
-                    "flex cursor-pointer items-center gap-3 rounded-sm px-3 py-2",
-                    i === active ? "bg-panel-2" : undefined,
+                    "flex cursor-pointer items-center gap-3 border-l-2 px-3 py-1.5",
+                    i === active ? "border-bright bg-hover" : "border-transparent",
                   )}
                 >
                   {r.thumbnail ? (
-                    <img src={r.thumbnail} alt="" width={36} height={36} className="size-9 shrink-0 rounded-xs bg-sunken object-cover pixelated" />
-                  ) : (
-                    <KindIcon kind={r.kind} />
-                  )}
+                    <img src={r.thumbnail} alt="" width={36} height={36} className="size-9 shrink-0 border border-rule-strong bg-sunken object-cover pixelated" />
+                  ) : null}
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm text-fg">{r.title}</span>
-                    {r.subtitle ? <span className="type-small block truncate text-muted">{r.subtitle}</span> : null}
+                    <span className={cn("block truncate text-[13px]", i === active ? "glow" : "text-fg")}>{r.title}</span>
+                    {r.subtitle ? <span className="block truncate text-xs text-muted">{r.subtitle}</span> : null}
                   </span>
-                  <span className="type-small shrink-0 text-muted">{KIND_LABEL[r.kind]}</span>
-                  {i === active ? <CornerDownLeft className="size-3.5 shrink-0 text-muted" aria-hidden /> : null}
+                  <span className="shrink-0 font-ocr text-[11px] tracking-[0.06em] text-muted">{KIND_LABEL[r.kind]}</span>
                 </li>
               ))
             )}
           </ul>
-          <div className="type-small flex items-center gap-4 border-t border-rule px-4 py-2 text-muted">
+          <div className="flex items-center gap-4 border-t border-dashed border-rule-strong px-3 py-2 font-ocr text-[11px] tracking-[0.06em] text-muted uppercase">
             <span className="flex items-center gap-1.5">
               <Kbd>↑</Kbd>
               <Kbd>↓</Kbd> move

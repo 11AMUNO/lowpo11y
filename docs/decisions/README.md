@@ -11,4 +11,5 @@ consequences. Superseded records stay in place with a pointer to the newer one.
 | [0003](0003-session-auth.md) | First-party session auth for owner/editor accounts instead of Supabase Auth | Accepted |
 | [0004](0004-storage-two-buckets.md) | `AssetStorage` abstraction with private + public buckets; local filesystem adapter | Accepted |
 | [0005](0005-next16-without-cache-components.md) | Next.js 16 without `cacheComponents`; explicit dynamic rendering for DB-backed pages | Accepted |
-| [0006](0006-ui-stack.md) | Radix primitives + Tailwind tokens, self-hosted fonts, vanilla three.js | Accepted |
+| [0006](0006-ui-stack.md) | Radix primitives + Tailwind tokens, self-hosted fonts, vanilla three.js | Accepted (fonts superseded by 0007) |
+| [0007](0007-visual-identity-from-seamless.md) | Visual identity follows the owner's 11AM-Seamless terminal style | Accepted |

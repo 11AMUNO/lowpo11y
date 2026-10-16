@@ -1,4 +1,3 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/cn";
 
@@ -23,18 +22,17 @@ function pageWindow(page: number, count: number): (number | "gap")[] {
 
 export function Pagination({ page, pageCount, hrefFor, className }: PaginationProps) {
   if (pageCount <= 1) return null;
-  const itemClass =
-    "grid h-9 min-w-9 place-items-center rounded-sm border border-rule px-2 text-sm tabular hover:border-rule-strong hover:bg-panel-2";
+  const item = "grid h-8 min-w-8 place-items-center border border-edge bg-sunken px-2 font-ocr text-xs text-muted hover:border-edge-hover hover:text-bright";
   return (
     <nav aria-label="Pagination" className={cn("flex items-center gap-1.5", className)}>
       {page > 1 ? (
-        <Link href={hrefFor(page - 1)} className={itemClass} rel="prev" aria-label="Previous page">
-          <ChevronLeft className="size-4" />
+        <Link href={hrefFor(page - 1)} className={item} rel="prev" aria-label="Previous page">
+          ◀
         </Link>
       ) : null}
       {pageWindow(page, pageCount).map((p, i) =>
         p === "gap" ? (
-          <span key={`gap-${i}`} className="px-1 text-muted" aria-hidden>
+          <span key={`gap-${i}`} className="px-1 font-ocr text-muted" aria-hidden>
             …
           </span>
         ) : (
@@ -43,15 +41,15 @@ export function Pagination({ page, pageCount, hrefFor, className }: PaginationPr
             href={hrefFor(p)}
             aria-current={p === page ? "page" : undefined}
             aria-label={`Page ${p}`}
-            className={cn(itemClass, p === page && "border-accent bg-accent-soft text-fg")}
+            className={cn(item, p === page && "border-bright text-bright [text-shadow:var(--crt-glow)]")}
           >
-            {p}
+            {String(p).padStart(2, "0")}
           </Link>
         ),
       )}
       {page < pageCount ? (
-        <Link href={hrefFor(page + 1)} className={itemClass} rel="next" aria-label="Next page">
-          <ChevronRight className="size-4" />
+        <Link href={hrefFor(page + 1)} className={item} rel="next" aria-label="Next page">
+          ▶
         </Link>
       ) : null}
     </nav>

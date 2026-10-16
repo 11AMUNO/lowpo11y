@@ -1,8 +1,8 @@
-export const THEME_STORAGE_KEY = "lp-theme";
-export type Theme = "dark" | "light";
+export const CRT_STORAGE_KEY = "lp-crt";
 
 /**
- * Applies the saved theme before first paint so there is no flash of the wrong theme.
- * Kept tiny and static so its CSP hash never changes (see src/lib/security/csp.ts).
+ * Applies the saved CRT-effects preference before first paint (no flash of
+ * scanlines for people who turned them off). Kept tiny and static so its CSP
+ * hash never changes (see src/lib/security/csp.ts).
  */
-export const THEME_SCRIPT = `try{var t=localStorage.getItem("${THEME_STORAGE_KEY}");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
+export const CRT_SCRIPT = `try{if(localStorage.getItem("${CRT_STORAGE_KEY}")==="off")document.documentElement.dataset.crt="off"}catch(e){}`;

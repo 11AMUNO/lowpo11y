@@ -10,6 +10,8 @@ export default defineConfig([
       // Catalogue thumbnails and tool canvases are pre-optimised derivatives or
       // local object URLs; next/image adds nothing there (see docs/decisions/0004).
       "@next/next/no-img-element": "off",
+      // "// PANEL" titles and " // " separators are part of the terminal visual language, not comments.
+      "react/jsx-no-comment-textnodes": "off",
       "@typescript-eslint/no-unused-vars": [
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },

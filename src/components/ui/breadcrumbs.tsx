@@ -19,24 +19,24 @@ export function Breadcrumbs({ items }: { items: Crumb[] }) {
     })),
   };
   return (
-    <nav aria-label="Breadcrumb" className="type-small text-muted">
+    <nav aria-label="Breadcrumb" className="font-ocr text-xs tracking-[0.08em] text-muted uppercase">
       <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
         {items.map((c, i) => {
           const last = i === items.length - 1;
           return (
             <li key={`${c.label}-${i}`} className="flex items-center gap-1.5">
               {c.href && !last ? (
-                <Link href={c.href} className="hover:text-fg hover:underline">
+                <Link href={c.href} className="hover:text-bright">
                   {c.label}
                 </Link>
               ) : (
-                <span aria-current={last ? "page" : undefined} className={last ? "text-fg" : undefined}>
+                <span aria-current={last ? "page" : undefined} className={last ? "text-bright" : undefined}>
                   {c.label}
                 </span>
               )}
               {!last ? (
-                <span aria-hidden className="text-muted">
-                  /
+                <span aria-hidden className="text-faint">
+                  //
                 </span>
               ) : null}
             </li>

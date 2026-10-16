@@ -1,21 +1,26 @@
 import { cn } from "@/lib/cn";
+import { BANNER } from "./banner-text";
 
-/** Flat-shaded cube mark: three faces, three shades — the smallest possible low-poly model. */
-export function LogoMark({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden className={cn("size-5", className)}>
-      <path d="M12 2.5 21 7.25 12 12 3 7.25Z" fill="var(--c-accent-strong)" />
-      <path d="M3 7.25 12 12v9.5L3 16.75Z" fill="var(--c-accent)" />
-      <path d="M21 7.25 12 12v9.5l9-4.75Z" fill="color-mix(in oklab, var(--c-accent) 55%, var(--c-bg))" />
-    </svg>
-  );
+/** Header wordmark: OCR caps with CRT glow. */
+export function Wordmark({ className }: { className?: string }) {
+  return <span className={cn("font-ocr text-[15px] leading-none tracking-[0.14em] glow", className)}>LOWPO11Y</span>;
 }
 
-export function Wordmark({ className }: { className?: string }) {
+const BANNER_COLS = Math.max(...BANNER.split("\n").map((l) => l.length));
+
+/**
+ * The ASCII-art banner, scaled so it always fits its container width
+ * (same technique as the Seamless header).
+ */
+export function Banner({ className }: { className?: string }) {
   return (
-    <span className={cn("inline-flex items-center gap-2", className)}>
-      <LogoMark />
-      <span className="text-[1.0625rem] leading-none font-[820] tracking-[0.02em] [font-stretch:125%]">LOWPO11Y</span>
-    </span>
+    <pre
+      role="img"
+      aria-label="LOWPO11Y"
+      className={cn("m-0 overflow-hidden leading-[1.05] whitespace-pre glow", className)}
+      style={{ fontSize: `clamp(4px, calc((100vw - 3rem) / ${BANNER_COLS * 0.62}), 15px)` }}
+    >
+      {BANNER}
+    </pre>
   );
 }

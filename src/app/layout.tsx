@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { site } from "@/lib/site";
-import { THEME_SCRIPT } from "@/lib/theme";
+import { CRT_SCRIPT } from "@/lib/theme";
 import { Providers } from "@/components/site/providers";
 
 export const metadata: Metadata = {
@@ -14,17 +14,15 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#1b1a18" },
-    { media: "(prefers-color-scheme: light)", color: "#e3dfd5" },
-  ],
+  themeColor: "#000000",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en-GB" data-theme="dark" suppressHydrationWarning>
+    <html lang="en-GB" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: CRT_SCRIPT }} />
       </head>
       <body className="min-h-dvh">
         <Providers>{children}</Providers>
