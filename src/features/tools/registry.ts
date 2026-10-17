@@ -55,12 +55,12 @@ export const TOOLS: ToolDefinition[] = [
   {
     slug: "texture-atlas",
     name: "Texture atlas builder",
-    summary: "Pack tiles into one atlas with gutters and edge extrusion, then export the PNG with UV mapping JSON.",
+    summary: "Pack tiles into one atlas with padding, edge extrusion and power-of-two sizes, then export the PNG with UV JSON and CSV for Blender, Godot or Unity.",
     route: "/tools/texture-atlas",
     category: "texture",
-    status: "in-development",
+    status: "available",
     processing: "local",
-    version: "0.0.0",
+    version: "1.0.0",
   },
   {
     slug: "palette",

@@ -9,6 +9,7 @@ const PAGES = [
   "/tools/texture-converter",
   "/tools/resizer",
   "/tools/palette",
+  "/tools/texture-atlas",
   "/assets",
   "/assets?view=list&type=model",
   "/textures",
@@ -82,6 +83,17 @@ test("palette generator with a palette and image loaded has no WCAG A/AA violati
   await expect(page.getByRole("region", { name: "Preview" }).getByRole("status")).toContainText("MAPPED TO", { timeout: 20_000 });
   await page.getByRole("button", { name: "Deutan" }).click();
   await page.getByText("Paste colours").click();
+  const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).exclude('[aria-hidden="true"]').analyze();
+  expect(results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
+});
+
+test("texture atlas builder with tiles loaded has no WCAG A/AA violations", async ({ page }) => {
+  await page.goto("/tools/texture-atlas");
+  await page.getByRole("button", { name: "+ Sample" }).click();
+  await expect(page.getByRole("region", { name: "Atlas", exact: true }).getByRole("status")).toContainText("TILES //", { timeout: 20_000 });
+  await page.getByRole("button", { name: "Fill transparency" }).click();
+  await page.getByRole("button", { name: "Resize all" }).click();
+  await page.getByRole("button", { name: "Manual", exact: true }).click();
   const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).exclude('[aria-hidden="true"]').analyze();
   expect(results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
 });
