@@ -6,6 +6,8 @@ const PAGES = [
   "/",
   "/tools",
   "/tools/seamless",
+  "/tools/texture-converter",
+  "/tools/resizer",
   "/assets",
   "/assets?view=list&type=model",
   "/textures",
@@ -46,6 +48,28 @@ test("seamless tool with files loaded has no WCAG A/AA violations", async ({ pag
   await expect(page.getByRole("status").filter({ hasText: /SEAM/ }).first()).toBeVisible({ timeout: 20_000 });
   await page.getByRole("button", { name: "Enable psx effects" }).click();
   await page.getByText("Advanced").first().click();
+  const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).exclude('[aria-hidden="true"]').analyze();
+  expect(results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
+});
+
+test("texture converter with an image loaded has no WCAG A/AA violations", async ({ page }) => {
+  await page.goto("/tools/texture-converter");
+  await page.getByRole("button", { name: "+ Sample" }).click();
+  await expect(page.getByRole("region", { name: "Preview" }).getByRole("status")).toContainText("COLOURS", { timeout: 20_000 });
+  for (const m of ["Adjust", "Alpha"]) await page.getByRole("button", { name: m, exact: true }).click();
+  await page.getByText("Per-channel bits").click();
+  await page.getByText("Import a palette").click();
+  const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).exclude('[aria-hidden="true"]').analyze();
+  expect(results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
+});
+
+test("batch resizer with files resized has no WCAG A/AA violations", async ({ page }) => {
+  await page.goto("/tools/resizer");
+  await page.getByRole("button", { name: "+ Sample" }).click();
+  await page.getByRole("button", { name: /^Resize \d+ files$/ }).click();
+  await expect(page.getByRole("button", { name: "All resized" })).toBeVisible({ timeout: 20_000 });
+  await page.getByRole("button", { name: "Scale", exact: true }).click();
+  await page.getByRole("button", { name: "WEBP", exact: true }).click();
   const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).exclude('[aria-hidden="true"]').analyze();
   expect(results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
 });

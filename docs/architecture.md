@@ -37,6 +37,24 @@ Client tools ──► src/lib/processing (pure pixel algorithms) in Web Workers
 | `scripts/` | migrate, seed, reset, admin:create, vercel-build, e2e server |
 | `tests/unit`, `tests/integration`, `tests/e2e` | Vitest and Playwright suites |
 
+## Browser tools
+
+Tools live in `src/features/tools/<tool>` (React UI + a Web Worker) on top of
+shared code:
+
+| Path | Purpose |
+|---|---|
+| `src/features/tools/registry.ts` | Tool list, routes and honest status (`available` only when implemented and tested) |
+| `src/features/tools/shared` | Viewport (before/after split, tile check, pan/zoom), file decoding, folder drop reading, downloads |
+| `src/lib/processing/seamless` | Port of the owner's Seamless engine (canvas-based, byte-identical to the original) |
+| `src/lib/processing/{resample,quantize,dither,blue-noise,retro,resize-plan}.ts` | Pure RGBA algorithms shared by tools, workers, scripts and tests |
+| `src/lib/formats/png.ts` | Deterministic PNG encoder: the download holds exactly the previewed pixels |
+
+The UI posts the file and settings to its worker; the worker decodes, runs
+the core and returns the result buffer and the encoded file together, so
+the preview and the download cannot drift apart. Only settings are kept in
+`localStorage`; images never leave the browser. See ADR 0008.
+
 ## Request contexts and RLS
 
 Every database call names its context:

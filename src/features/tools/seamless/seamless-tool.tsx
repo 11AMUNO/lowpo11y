@@ -14,7 +14,8 @@ import { LibraryPanel } from "./library-panel";
 import { applyPattern, collator, colNames, extOf, isCustom, isImage, itemsIn, LOOSE, ordered, readDrop, safeName, zipEntryName, type Entry, type Item } from "./model";
 import { PipelinePanel, type ModuleKey } from "./pipeline-panel";
 import type { ExportFormat } from "./protocol";
-import { Viewport, type ViewState } from "./viewport";
+import { useWindowDrop } from "../shared/drop";
+import { Viewport, type ViewState } from "../shared/viewport";
 
 interface Result {
   id: number;
@@ -71,7 +72,6 @@ export function SeamlessTool() {
   const [view, setView] = useState<ViewState>({ view: "split", grid: 3, tsrc: "result", seams: false, pixelated: false, divider: 0.5, pan: { x: 0, y: 0 }, zoom: 1 });
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
   const [busy, setBusy] = useState<string | null>(null);
-  const [dragging, setDragging] = useState(false);
   const lastEdit = useRef<{ key: string; at: number; id: number } | null>(null);
 
   const it = items.find((i) => i.id === active) ?? null;
@@ -359,42 +359,11 @@ export function SeamlessTool() {
     return () => document.removeEventListener("keydown", onKey);
   }, [list, active, select, download, removeItems]);
 
-  useEffect(() => {
-    let depth = 0;
-    const hasFiles = (e: DragEvent) => !!e.dataTransfer && [...e.dataTransfer.types].includes("Files");
-    const enter = (e: DragEvent) => {
-      if (hasFiles(e)) {
-        depth++;
-        setDragging(true);
-      }
-    };
-    const leave = () => {
-      depth = Math.max(0, depth - 1);
-      if (!depth) setDragging(false);
-    };
-    const over = (e: DragEvent) => {
-      if (hasFiles(e)) e.preventDefault();
-    };
-    const drop = async (e: DragEvent) => {
-      if (!hasFiles(e)) return;
-      e.preventDefault();
-      depth = 0;
-      setDragging(false);
-      toast({ title: "Reading folders…" });
-      const { entries, failed } = await readDrop(e.dataTransfer!);
-      ingest(entries, failed);
-    };
-    window.addEventListener("dragenter", enter);
-    window.addEventListener("dragleave", leave);
-    window.addEventListener("dragover", over);
-    window.addEventListener("drop", drop);
-    return () => {
-      window.removeEventListener("dragenter", enter);
-      window.removeEventListener("dragleave", leave);
-      window.removeEventListener("dragover", over);
-      window.removeEventListener("drop", drop);
-    };
-  }, [ingest]);
+  const dragging = useWindowDrop(async (dt) => {
+    toast({ title: "Reading folders…" });
+    const { entries, failed } = await readDrop(dt);
+    ingest(entries, failed);
+  });
 
   /* --------------------------------------------------------------- render */
   const s = it?.settings ?? DEFAULTS;
@@ -451,7 +420,7 @@ export function SeamlessTool() {
         </ul>
       </header>
 
-      <div className="grid min-h-0 flex-1 gap-3 p-3 lg:grid-cols-[17rem_minmax(0,1fr)_22rem] xl:grid-cols-[19rem_minmax(0,1fr)_24rem]">
+      <div className="grid gap-3 p-3 lg:min-h-0 lg:flex-1 lg:grid-cols-[17rem_minmax(0,1fr)_22rem] xl:grid-cols-[19rem_minmax(0,1fr)_24rem]">
         <LibraryPanel
           items={items}
           cols={cols}

@@ -4,6 +4,7 @@
  * per-file settings, summaries, naming and ZIP layout rules.
  */
 import { DEFAULTS, psxActive, type SeamlessSettings } from "@/lib/processing/seamless/engine";
+import { isImage, readDrop as readDroppedFiles, type DroppedFile } from "../shared/drop";
 import { EXT, type ExportFormat } from "./protocol";
 
 export const LOOSE = "UNSORTED";
@@ -135,8 +136,7 @@ export function zipEntryName(used: Set<string>, dir: string, name: string, forma
 
 /* ------------------------------------------------------------------ ingest */
 
-const IMG_RE = /\.(png|jpe?g|webp|bmp|gif|avif|tiff?)$/i;
-export const isImage = (f: File) => (f.type && f.type.startsWith("image/")) || IMG_RE.test(f.name);
+export { isImage };
 /** Folder name a file belongs to: its parent directory. */
 export const parentOf = (path: string) => {
   const p = path.split("/").filter(Boolean);
@@ -148,85 +148,10 @@ export interface Entry {
   col: string;
 }
 
-interface FsHandle {
-  kind: "file" | "directory";
-  name: string;
-  getFile?: () => Promise<File>;
-  values?: () => AsyncIterable<FsHandle>;
-}
-interface FsEntry {
-  isFile: boolean;
-  isDirectory: boolean;
-  fullPath: string;
-  file?: (ok: (f: File) => void, err: () => void) => void;
-  createReader?: () => { readEntries: (ok: (list: FsEntry[]) => void, err: () => void) => void };
-}
+/** Each file's collection is its immediate parent folder; loose files go to UNSORTED. */
+export const toEntries = (files: DroppedFile[]): Entry[] => files.map(({ file, dir }) => ({ file, col: parentOf(dir + file.name) || LOOSE }));
 
-async function walkHandle(h: FsHandle, parent: string | null, out: Entry[]) {
-  if (h.kind === "file") {
-    out.push({ file: await h.getFile!(), col: parent || LOOSE });
-    return;
-  }
-  for await (const child of h.values!()) await walkHandle(child, h.name, out);
-}
-function readEntry(entry: FsEntry, out: Entry[], status: { failed: boolean }): Promise<void> {
-  return new Promise((resolve) => {
-    if (entry.isFile) {
-      entry.file!(
-        (file) => {
-          out.push({ file, col: parentOf(entry.fullPath) || LOOSE });
-          resolve();
-        },
-        () => {
-          status.failed = true;
-          resolve();
-        },
-      );
-    } else if (entry.isDirectory) {
-      const reader = entry.createReader!();
-      const batch = () =>
-        reader.readEntries(
-          async (list) => {
-            if (!list.length) return resolve();
-            for (const child of list) await readEntry(child, out, status);
-            batch();
-          },
-          () => {
-            status.failed = true;
-            resolve();
-          },
-        );
-      batch();
-    } else resolve();
-  });
-}
-
-/**
- * Reads a drop, including whole folders. Everything on the DataTransfer must
- * be grabbed synchronously, before the first await. The File System Access
- * handle API is tried first, the older entry API is the fallback.
- */
 export async function readDrop(dt: DataTransfer): Promise<{ entries: Entry[]; failed: boolean }> {
-  const items = [...(dt.items || [])].filter((i) => i.kind === "file");
-  const handles = items.map((i) => ((i as unknown as { getAsFileSystemHandle?: () => Promise<FsHandle | null> }).getAsFileSystemHandle?.() ?? null));
-  const entries = items.map((i) => (i.webkitGetAsEntry ? (i.webkitGetAsEntry() as unknown as FsEntry | null) : null));
-  const loose = [...dt.files];
-  const out: Entry[] = [];
-  const status = { failed: false };
-  for (let k = 0; k < Math.max(items.length, loose.length); k++) {
-    if (handles[k]) {
-      try {
-        const h = await handles[k];
-        if (h) {
-          await walkHandle(h, null, out);
-          continue;
-        }
-      } catch {
-        // fall back to the entry API
-      }
-    }
-    if (entries[k]) await readEntry(entries[k]!, out, status);
-    else if (loose[k]) out.push({ file: loose[k]!, col: LOOSE });
-  }
-  return { entries: out, failed: status.failed };
+  const { files, failed } = await readDroppedFiles(dt);
+  return { entries: toEntries(files), failed };
 }

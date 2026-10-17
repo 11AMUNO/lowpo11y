@@ -13,3 +13,4 @@ consequences. Superseded records stay in place with a pointer to the newer one.
 | [0005](0005-next16-without-cache-components.md) | Next.js 16 without `cacheComponents`; explicit dynamic rendering for DB-backed pages | Accepted |
 | [0006](0006-ui-stack.md) | Radix primitives + Tailwind tokens, self-hosted fonts, vanilla three.js | Accepted (fonts superseded by 0007) |
 | [0007](0007-visual-identity-from-seamless.md) | Visual identity follows the owner's 11AM-Seamless terminal style | Accepted |
+| [0008](0008-tool-processing-core.md) | Browser tools share a pure RGBA processing core and a deterministic PNG encoder; Seamless keeps its canvas engine | Accepted |

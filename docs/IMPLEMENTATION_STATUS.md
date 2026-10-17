@@ -3,7 +3,7 @@
 Living record of what is built, how it was verified, and what is outstanding.
 Updated at the end of every milestone. Spec: `docs/MASTER_BUILD_PLAN.md`.
 
-_Last updated: 2026-10-16_
+_Last updated: 2026-10-17_
 
 ## Milestones
 
@@ -13,8 +13,8 @@ _Last updated: 2026-10-16_
 | M01 Public shell & design system | ✅ Done | 25 Playwright tests incl. axe WCAG 2.2 AA on 7 pages (CRT on/off); 35 unit tests; restyled to owner's Seamless identity |
 | M02 Infrastructure (DB, RLS, auth, storage, uploads) | ✅ Done | 143 unit/integration tests (RLS on PGlite + Postgres 16; storage contract on local + S3); 35 E2E incl. journey 10 |
 | M03 Asset CMS + catalogue | ✅ Done | 221 unit/integration tests (PGlite + Postgres 16 + S3); 67 E2E incl. journeys 1–3 and axe on 10 public + 8 admin pages |
-| M04 Initial processing tools | ⏳ Next | — |
-| M05 Advanced tools | ⬜ Not started | — |
+| M04 Initial processing tools | ✅ Done | 168 unit/integration tests locally (CI repeats the DB and storage suites on Postgres 16 + S3); 89 E2E incl. journey 4, Seamless byte-identical to the original (232 comparisons), axe on all three tools |
+| M05 Advanced tools | ⏳ Next | — |
 | M06 Resources & curated video directory | ⬜ Not started | — |
 | M07 Asset Workshop | ⬜ Not started | — |
 | M08 Scene Builder alpha | ⬜ Not started | — |
@@ -231,7 +231,9 @@ whole project into the server bundle; the origin check rejected sign-in when
 Next dev normalised the host; changing a licence kept a stale attestation; a
 restored Turbopack dev cache put browsers into a reload loop (dev cache
 disabled); two processes could open the same local PGlite directory (lock
-file added).
+file added); A–Z sorting differed between hosts because CI's glibc
+`en_US` collation ignores spaces (name sorts now use `collate "C"`, and the
+test database can be created with an ICU locale to reproduce it).
 
 **Known limitations**
 - Collections, catalogue and admin work with up to thousands of assets; the
@@ -241,11 +243,88 @@ file added).
 - Asset dependencies and creator credits exist in the schema and on detail
   pages but have no editor UI yet (planned with M07 Workshop).
 
+## M04 — Initial processing tools
+
+**Built**
+- **T01 Seamless** (`/tools/seamless`): the owner's 11AM-Seamless v2,
+  vendored unmodified in `vendor/11am-seamless`, ported to TypeScript
+  (`src/lib/processing/seamless/engine.ts`) and rebuilt in React with the
+  original app's behaviour: collections from dropped folders, per-file
+  settings, the 01–04 pipeline rack, split and tile previews, seam score,
+  PNG/JPG/WEBP export and a batch ZIP laid out size/collection/file.
+- **T02 Retro texture converter** (`/tools/texture-converter`): exact output
+  sizes (presets 32–512, custom, long side; crop, pad or stretch), nearest or
+  smooth resampling, brightness/contrast/saturation/gamma, seeded grain,
+  per-channel bit depth (RGB555, 565, 444, 332 or custom), adaptive
+  median-cut or locked palettes (lock the current one, paste hex or a GIMP
+  `.gpl`, save as `.gpl`), 2×2/4×4/8×8 Bayer, blue-noise and
+  Floyd–Steinberg dithering (errors wrap at the edges so tiles stay
+  seamless), alpha kept or cut to 1 bit, five starting presets, before/after
+  and tile previews, undo/reset, settings remembered, keys D and T. The page
+  states that colour reduction is a visual effect and doesn't enforce any
+  console's VRAM or CLUT limits.
+- **Batch resizer** (`/tools/resizer`): drop folder trees or pick files or a
+  folder; long side, exact (crop/pad/stretch) or percentage sizes,
+  power-of-two rounding, nearest or smooth sampling, keep the format or write
+  PNG/JPG/WEBP; planned output sizes show before resizing; parallel workers
+  with progress and stop; per-file save and a ZIP that keeps folder paths.
+- Shared processing core (ADR 0008): pure RGBA resampling (premultiplied
+  triangle filter), quantising, ordered and blue-noise thresholds,
+  void-and-cluster blue noise, and a deterministic PNG encoder, so a
+  download holds exactly the previewed pixels. Shared tool code: viewport,
+  file decoding, folder drop reading (`src/features/tools/shared`).
+- Format validation: drop zones check type and size (64 MB) and decode
+  limits (4096² converter, 8192² resizer and Seamless); damaged or
+  unsupported files get a plain error, and the resizer marks them
+  unreadable and leaves them out of the ZIP.
+- The tools registry marks Seamless, the converter and the resizer as
+  available; the tools page, menu and sitemap follow it.
+
+**Verified**
+- Seamless regression: the port runs beside the original engine in Chromium
+  over 29 settings × 4 inputs on the main thread and in a worker: 232
+  comparisons, all byte-identical. A downloaded PNG equals the original
+  engine's output.
+- Unit: resampling (exact sizes for every fit, flat colours stay flat,
+  no dark fringes against transparency), bit replication, median cut,
+  palette parsing, blue-noise ranks, every dither mode stays inside its
+  palette, locked palettes, RGB555 grid, seed determinism, presets, resize
+  planning, PNG round trips including semi-transparent pixels.
+- E2E: converter output equals the core run in Node on the same input,
+  byte for byte, at a non-square non-power-of-two size with alpha; the
+  same settings give the same file twice; presets, palette lock, cutout,
+  undo, remembered settings and a damaged file. **Journey 4**: texture →
+  Seamless → converter → the PNG equals the core's output and every
+  sampled texel of the on-screen preview. Resizer: a folder tree with a
+  text file and a damaged PNG → ZIP with folder paths, exact sizes, alpha
+  kept, JPG stays JPG; settings changes mark files stale; pad leaves
+  transparent margins. axe WCAG 2.2 AA on all three tools, empty and with
+  files loaded. Layout: no overlapping panels at phone width, and the
+  workspace never scrolls the page on desktop.
+
+**Bugs found and fixed**: on phones the tool panels overlapped and covered
+each other's buttons (the workspace grid was locked to the window height);
+screen-reader-only labels deep in a scrolled panel made the Seamless page
+scroll by 76px on desktop (the studio layout is now the positioning
+context); a test helper that ran one assertion per pixel made a test take
+19 s instead of 3 s.
+
+**Known limitations**
+- Decoding goes through the browser's premultiplied canvas: alpha values
+  are exact, but the colour of semi-transparent input pixels can move by a
+  few levels before processing (ADR 0008; a JS PNG decoder is an M09
+  candidate).
+- The converter handles one image at a time; batch conversion arrives with
+  the Workshop (M07).
+- "Copy/share recipe" from the plan's tool checklist isn't built yet:
+  settings are remembered per browser but can't be exported. Planned with
+  Workshop presets (M07).
+
 ## Owner deliveries (2026-10-16)
 
 | Item | Contents | Status |
 |---|---|---|
-| `Seamless.zip` | 11AM-Seamless v2 (`engine.js`, `app.js`, `style.css`, `zip.js`, `index.html`) | Style adopted site-wide (M01). Engine port + regression tests in M04. |
+| `Seamless.zip` | 11AM-Seamless v2 (`engine.js`, `app.js`, `style.css`, `zip.js`, `index.html`) | Style adopted site-wide (M01). Ported to TypeScript, proven byte-identical and live at `/tools/seamless` (M04). |
 | `01 - Wood.zip` | 10 wood textures, 512×512 RGBA PNG | Imported locally as drafts (M03). **Rights/licence to confirm** before publishing. |
 | `Archive.zip` | 72 FBX models exported from Tripo AI, one 512px JPG texture each, in 10 numbered themed sets (BH-01 … BH-12) | All 72 convert to GLB with textures and render thumbnails; imported locally as drafts (M03). **Tripo plan/licence to confirm** before publishing. |
 
