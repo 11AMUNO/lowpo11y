@@ -19,7 +19,7 @@ export default function PrivacyPage() {
       <Prose className="py-10">
         <h2>Files you open in tools</h2>
         <p>
-          The texture, palette, atlas, font, decal and model tools, the Workshop and the Scene Builder process files
+          The texture, palette, atlas, font, decal and model tools and the Workshop process files
           entirely in your browser. Your images, fonts and models are not uploaded, stored on our servers or included
           in analytics. If a future feature ever needs to send a file to a server, it will say so before you use it and
           will be off by default.
@@ -27,7 +27,7 @@ export default function PrivacyPage() {
         <h2>What is stored on your device</h2>
         <ul>
           <li>Your theme choice and tool settings, in your browser’s local storage.</li>
-          <li>Workshop presets and Scene Builder projects you save, in your browser’s storage, until you delete them.</li>
+          <li>Workshop recipes you save and the pipeline you were last working on, in your browser’s local storage, until you delete them. Workshop images only if you turn on “Keep images on this device”; turning it off deletes them.</li>
           <li>Staff sign-in uses one essential session cookie. Visitors do not need to sign in.</li>
         </ul>
         <h2>What the server records</h2>

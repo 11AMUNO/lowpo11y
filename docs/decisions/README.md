@@ -15,3 +15,4 @@ consequences. Superseded records stay in place with a pointer to the newer one.
 | [0007](0007-visual-identity-from-seamless.md) | Visual identity follows the owner's 11AM-Seamless terminal style | Accepted |
 | [0008](0008-tool-processing-core.md) | Browser tools share a pure RGBA processing core and a deterministic PNG encoder; Seamless keeps its canvas engine | Accepted |
 | [0009](0009-content-publishing-and-testing.md) | Content publishing rules enforced in the database; only verifiably tested shaders are published; click-to-load YouTube; resources and Godot entries start as drafts | Accepted |
+| [0010](0010-workshop-pipeline.md) | Workshop as an ordered step list on a reusable dependency-graph core with content-hash caching, workers and reproducible ZIP exports | Accepted |

@@ -76,7 +76,8 @@ export function outputSize(srcW: number, srcH: number, s: Pick<RetroSettings, "s
   return s.sizeMode === "long" ? longSideSize(srcW, srcH, s.width) : [s.width, s.height];
 }
 
-function adjust(img: RGBAImage, s: RetroSettings) {
+/** Brightness, contrast, saturation and gamma, in place. Shared with the Workshop. */
+export function adjustColours(img: RGBAImage, s: Pick<RetroSettings, "brightness" | "contrast" | "saturation" | "gamma">) {
   const { brightness, contrast, saturation, gamma } = s;
   if (!brightness && !contrast && !saturation && gamma === 1) return;
   const b = brightness * 2.55;
@@ -105,7 +106,8 @@ function adjust(img: RGBAImage, s: RetroSettings) {
   }
 }
 
-function grain(img: RGBAImage, amount: number, seed: number) {
+/** Seeded monochrome grain in 8-bit levels, in place. Shared with the Workshop. */
+export function addGrain(img: RGBAImage, amount: number, seed: number) {
   if (amount <= 0) return;
   const d = img.data,
     w = img.width;
@@ -125,8 +127,8 @@ export function convertRetro(src: RGBAImage, settings: Partial<RetroSettings> = 
   const d = img.data;
 
   if (s.alpha === "cutout") for (let i = 3; i < d.length; i += 4) d[i] = d[i]! >= s.alphaThreshold ? 255 : 0;
-  adjust(img, s);
-  grain(img, s.grain, s.seed);
+  adjustColours(img, s);
+  addGrain(img, s.grain, s.seed);
 
   const bitsOn = s.bits.r < 8 || s.bits.g < 8 || s.bits.b < 8;
   const snap = (c: RGB): RGB => [quantizeChannel(c[0], s.bits.r), quantizeChannel(c[1], s.bits.g), quantizeChannel(c[2], s.bits.b)];

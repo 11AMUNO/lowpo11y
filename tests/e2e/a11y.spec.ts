@@ -13,6 +13,7 @@ const PAGES = [
   "/tools/model-inspector",
   "/tools/bitmap-font",
   "/tools/decal",
+  "/workshop",
   "/assets",
   "/assets?view=list&type=model",
   "/textures",

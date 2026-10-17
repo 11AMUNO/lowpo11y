@@ -16,8 +16,8 @@ _Last updated: 2026-10-17_
 | M04 Initial processing tools | ✅ Done | 168 unit/integration tests locally (CI repeats the DB and storage suites on Postgres 16 + S3); 89 E2E incl. journey 4, Seamless byte-identical to the original (232 comparisons), axe on all three tools |
 | M05 Advanced tools | ✅ Done | 216 unit/integration tests locally (CI adds the Postgres 16 + S3 runs); 124 E2E incl. journeys 5–7, axe and phone/desktop layout checks on all eight tools |
 | M06 Resources & curated video directory | ✅ Done | 331 unit/integration tests locally on PGlite + Postgres 16; 149 E2E incl. shader compile/render, starter upload → download, creator → video → unpublish, axe on 6 new public + 8 new admin pages |
-| M07 Asset Workshop | ⏳ Next | — |
-| M08 Scene Builder alpha | ⬜ Not started | — |
+| M07 Asset Workshop | ✅ Done | 354 unit/integration tests locally on PGlite + Postgres 16; 157 E2E incl. journey 8 (exports byte-identical to the core in Node, reproducible ZIP), axe and phone/desktop layout on /workshop |
+| M08 Scene Builder alpha | ⏳ Next | — |
 | M09 Stabilisation & deploy | ⬜ Not started | — |
 
 ## M00 — Discovery and setup
@@ -506,6 +506,80 @@ instructions' code sample broke the numbered list.
   suggestions as a later feature).
 - YouTube Data API enrichment isn't used; oEmbed confirms a video exists and
   who published it, nothing more.
+
+## M07 — Asset Workshop
+
+**Built** (`/workshop`, ADR 0010)
+- **Pipeline**: an ordered list of steps (crop, resize, make seamless,
+  adjust colour, alpha threshold, palette, bit depth & dither, edge &
+  padding) plus an optional atlas step that packs every image and always
+  runs last. Steps can be added after the selected one, moved, removed,
+  reset and switched off without losing their settings. Every step is a
+  wrapper over the same processing core the tools use (the Seamless step runs
+  the owner's engine).
+- **Preview** of the original or any step for any image, compared with the
+  original or the previous step (split or tiled, pixelated toggle), with
+  size, colour count and timing; the atlas step previews the packed page.
+  A preview worker caches intermediate results (320 MB, LRU), so changing
+  one step recomputes only from there; progress and cancel.
+- **Inputs**: files, folders (paths kept), drag and drop, four CC0 samples,
+  and published textures from the library (licence and source recorded).
+  Unreadable files are flagged and reported in the export.
+- **Presets**: PSX-inspired Dirty Industrial, Pixelated Horror, N64-inspired
+  Soft Palette, UI Sprite Cutout, Atlas 128 Grid (settings only, no images);
+  saved recipes in this browser; JSON export/import with validation,
+  defaults for missing settings, notes on what was changed, refusal of
+  unknown steps and newer versions; the current pipeline is restored on the
+  next visit. Images are kept only with "Keep images on this device".
+- **Batch export**: PNG (deterministic encoder) or WebP, naming pattern with
+  `{name}` and `{n}`, 1–4 parallel jobs, memory and size estimate before
+  starting, progress and cancel, per-image failures that never discard the
+  rest; ZIP with outputs (or atlas.png + atlas.json + tiles/),
+  pipeline.json and manifest.json (sources with pixel SHA-256 and library
+  origin, outputs with size and SHA-256, failures, atlas). The same batch
+  gives the same ZIP bytes.
+- `/api/workshop/library`: published, downloadable texture-like assets with
+  their best PNG/JPG/WebP file.
+- Docs: public R2 bucket CORS rule added to the deployment guide (the 3D
+  viewer and the Workshop read published files in the browser).
+
+**Verified**
+- Unit: graph order, cycles, missing inputs, computing only what's needed,
+  cache reuse, recompute after eviction, cancel; stable hashing; pipeline
+  round trip, defaults and notes, refusals, atlas ordering, duplicate ids;
+  each step (never mutating its input), resize targets; a Workshop pipeline
+  equals the retro converter byte for byte; every preset runs
+  deterministically; previews of any step, disabled steps pass through,
+  editing the last step recomputes one node; export names; manifest.
+- Integration (PGlite and Postgres 16): the library lists only published,
+  downloadable texture-like assets with a published image file, prefers the
+  primary file, filters by title.
+- E2E **journey 8**: a pipeline built in the UI previews every stage,
+  exports to JSON and imports back; the batch ZIP has the expected files,
+  the unreadable image is reported, every output equals the core run in
+  Node on the same input, every checksum holds, and a second export is
+  byte-identical. Atlas preset → 512×512 page with four frames, JSON, tiles
+  and manifest; recipe saved and session restored after reload; a step
+  switched off and on; seamless (including mirror doubling the size) runs in
+  the worker; imports explain fixes and refuse newer versions. axe on the
+  empty and loaded Workshop; phone and desktop layout, including long step
+  descriptions on a phone.
+
+**Bugs found and fixed**: the atlas step rotated rotated tiles twice (the
+packer's compose already turns them); a cached node evicted mid-run would
+have run without its inputs (evaluation is now on demand); on a phone, long
+step descriptions widened the workspace past the screen (the layout test now
+checks width for every tool); the dead `/scene-builder` links in the header,
+footer and home page since M01 are removed until M08 ships the page, and the
+privacy page now describes exactly what the Workshop stores.
+
+**Known limitations**
+- A step list, not a visual node editor (the graph core supports one later).
+- WebP needs a browser that can encode it; the Workshop says so if not.
+- Inputs are limited to 8192×8192 and 128 MB each; very large batches are
+  bounded by browser memory (the estimate warns above 1.5 GB).
+- No cloud sync of recipes (the site has no visitor accounts).
+- Model inputs aren't supported yet (no model transformation steps exist).
 
 ## Owner deliveries (2026-10-16)
 

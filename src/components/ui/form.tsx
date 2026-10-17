@@ -212,14 +212,17 @@ export interface ToggleProps {
   title?: string;
   disabled?: boolean;
   className?: string;
+  /** Accessible name when the visible text alone is ambiguous; must start with the visible text. */
+  ariaLabel?: string;
 }
 
 /** A pressable button toggle (Seamless `[data-bool]` buttons like SQUARE CROP). */
-export function Toggle({ pressed, onPressedChange, children, title, disabled, className }: ToggleProps) {
+export function Toggle({ pressed, onPressedChange, children, title, disabled, className, ariaLabel }: ToggleProps) {
   return (
     <button
       type="button"
       aria-pressed={pressed}
+      aria-label={ariaLabel}
       title={title}
       disabled={disabled}
       onClick={() => onPressedChange(!pressed)}

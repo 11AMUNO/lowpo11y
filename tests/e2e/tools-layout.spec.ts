@@ -10,11 +10,15 @@ const TOOLS: [string, string][] = [
   ["/tools/model-inspector", "+ Crate"],
   ["/tools/bitmap-font", "+ Sample font"],
   ["/tools/decal", "+ Green screen"],
+  ["/workshop", "+ Sample"],
 ];
 
 /** Top and bottom of each column of the tool's workspace grid, in page order. */
 const columns = (page: Page) =>
-  page.locator("main .grid").first().evaluate((grid) => [...grid.children].map((c) => ({ top: c.getBoundingClientRect().top, bottom: c.getBoundingClientRect().bottom, scroll: c.scrollHeight, height: c.clientHeight })));
+  page
+    .locator("main .grid")
+    .first()
+    .evaluate((grid) => [...grid.children].map((c) => ({ top: c.getBoundingClientRect().top, bottom: c.getBoundingClientRect().bottom, right: c.getBoundingClientRect().right, scroll: c.scrollHeight, height: c.clientHeight, scrollW: c.scrollWidth, width: c.clientWidth })));
 
 for (const [path, sample] of TOOLS) {
   test(`${path}: phone layout stacks panels without overlap`, async ({ page }) => {
@@ -24,6 +28,11 @@ for (const [path, sample] of TOOLS) {
     await expect(page.getByRole("status").first()).not.toContainText("IDLE", { timeout: 20_000 });
     const cols = await columns(page);
     for (let i = 1; i < cols.length; i++) expect(cols[i]!.top).toBeGreaterThanOrEqual(cols[i - 1]!.bottom - 1);
+    // Nothing is wider than the phone: no sideways scrolling, no cut-off controls.
+    for (const c of cols) {
+      expect(c.right).toBeLessThanOrEqual(390);
+      expect(c.scrollW).toBeLessThanOrEqual(c.width + 1);
+    }
   });
 
   test(`${path}: desktop workspace fills the window and the page itself never scrolls`, async ({ page }) => {

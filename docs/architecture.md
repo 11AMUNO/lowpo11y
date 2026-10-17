@@ -141,6 +141,21 @@ Publishing is guarded in the database (ADR 0009). Admin routes live under
 `/api/shaders/{slug}/download` and `/api/starter-projects/{slug}/download`
 (counted, then redirected to the public bucket).
 
+## Workshop
+
+| Path | Purpose |
+|---|---|
+| `src/lib/workshop/graph.ts` | Generic dependency graph: topological order, cycle checks, content-derived cache keys, on-demand evaluation, progress, cancel; size-bounded LRU cache |
+| `src/lib/workshop/steps.ts` | Step catalogue (crop, resize, seamless, adjust, alpha, palette, bit depth, edge) wrapping the shared processing core; field specs drive the settings form |
+| `src/lib/workshop/pipeline.ts` | Versioned pipeline JSON, the atlas step, loading with validation, defaults, notes and migrations |
+| `src/lib/workshop/run.ts` | Pipeline + images → graph nodes; final results, previews of any step, atlas packing |
+| `src/lib/workshop/{presets,manifest,estimate,hash,library}.ts` | Built-in presets; deterministic export names and the manifest; output size and memory estimates; hashing; published textures for the library picker |
+| `src/features/workshop/worker.ts` | Preview worker (cached) and batch jobs; Seamless on an OffscreenCanvas; PNG/WebP encoding with SHA-256 |
+| `src/features/workshop/batch.ts` | Worker pool with a concurrency limit, per-image failures, reproducible ZIP |
+| `src/features/workshop/{workshop,step-form,library-picker,storage}.tsx?` | The `/workshop` UI, the generated settings form, the library picker, browser storage (recipes, session, opt-in kept images) |
+
+See ADR 0010.
+
 ## Environments
 
 | | Database | Storage | Data dir |

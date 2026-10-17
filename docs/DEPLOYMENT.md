@@ -97,7 +97,27 @@ policy** → **Add/Edit** and paste (replace the origins):
 ]
 ```
 
-### 2c. API token
+### 2c. CORS on the public bucket
+
+The 3D viewer on asset pages and the Workshop read published files from the
+public bucket in the browser, so it must allow your site to read them. Public
+bucket → **Settings** → **CORS policy** → **Add/Edit** and paste (replace the
+origins):
+
+```json
+[
+  {
+    "AllowedOrigins": ["https://lowpo11y.com", "https://your-project.vercel.app"],
+    "AllowedMethods": ["GET", "HEAD"],
+    "AllowedHeaders": ["*"],
+    "MaxAgeSeconds": 86400
+  }
+]
+```
+
+Plain downloads work without it; only in-page previews need it.
+
+### 2d. API token
 
 1. R2 overview → **Manage R2 API Tokens** (or "API" → "Manage API tokens").
 2. **Create API token** → permission **Object Read & Write** → limit it to
