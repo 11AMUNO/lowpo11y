@@ -139,6 +139,7 @@ test("decal maker with an image keyed has no WCAG A/AA violations", async ({ pag
 
 test.describe("accessibility (admin)", () => {
   const PAGES = ["/admin", "/admin/assets", "/admin/assets/new", "/admin/import", "/admin/collections", "/admin/messages", "/admin/audit", "editor"];
+  PAGES.push("/admin/usage", "/admin/licences", "/admin/licences?deep=1");
   PAGES.push("/admin/shaders", "/admin/shaders/new", "/admin/starter-projects", "/admin/learn/videos", "/admin/learn/creators", "/admin/resources", "shader editor", "resource editor");
   for (const path of PAGES) {
     test(`${path} has no WCAG A/AA violations`, async ({ page }) => {

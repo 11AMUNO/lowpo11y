@@ -9,5 +9,7 @@ export const ADMIN_NAV: { label: string; href: string; adminOnly?: boolean }[] =
   { label: "Learn", href: "/admin/learn" },
   { label: "Resources", href: "/admin/resources" },
   { label: "Messages", href: "/admin/messages" },
+  { label: "Licences audit", href: "/admin/licences" },
+  { label: "Usage", href: "/admin/usage" },
   { label: "Audit log", href: "/admin/audit", adminOnly: true },
 ];

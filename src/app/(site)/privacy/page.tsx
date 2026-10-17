@@ -43,6 +43,13 @@ export default function PrivacyPage() {
             period.
           </li>
           <li>Messages you send through the contact form, kept only as long as needed to respond.</li>
+          <li>
+            Anonymous usage counts, per day: how many pages of each kind were viewed, searches made, files saved by
+            each tool, 3D previews that loaded or failed, and page-speed measurements. No cookies, IP addresses,
+            identifiers, search words or full URLs are stored. Whether a visit is a return visit is decided in your
+            browser (it keeps only the date of your last visit). If your browser sends Do Not Track or Global Privacy
+            Control, nothing is counted.
+          </li>
         </ul>
         <h2>What we do not do</h2>
         <ul>
