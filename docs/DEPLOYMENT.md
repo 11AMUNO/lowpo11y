@@ -158,8 +158,9 @@ Or use any password manager's generator (40+ characters).
 
 1. Visit `https://your-site/auth/setup`.
 2. Enter the `SETUP_TOKEN`, your name, email and a password (12+ characters).
-3. You are signed in to `/admin`. The setup page now refuses to run again.
-   You may delete `SETUP_TOKEN` from Vercel afterwards.
+3. You are signed in to `/admin`. The setup page now refuses to run again
+   (it stays closed once any account exists). Delete `SETUP_TOKEN` from
+   Vercel afterwards.
 
 Forgot your password? From a computer with the repo:
 `DATABASE_URL="…" pnpm admin:create --email you@example.com --name "You"`
@@ -199,6 +200,55 @@ Sign in, open **Admin → Import**, choose the folder with your models or
 textures and follow the steps. Everything arrives as a draft; publish each
 asset once its licence and rights are set. The full guide, including the
 terminal command for large libraries, is in [IMPORTING.md](IMPORTING.md).
+
+## 9. Maintenance, alerts and backups
+
+**Daily maintenance.** In Vercel → Settings → Environment Variables add:
+
+| Variable | Value |
+|---|---|
+| `CRON_SECRET` | another generated secret (section 4) |
+| `STORAGE_BUDGET_GB` | the storage you're willing to pay for, e.g. `10` (R2's free tier) |
+| `ALERT_WEBHOOK_URL` | optional: a Slack or Discord incoming-webhook URL |
+
+`vercel.json` already schedules `/api/cron/daily` (04:17 UTC). Vercel sends
+`CRON_SECRET` with it; the job prunes old rate-limit and download records,
+expired sessions and abandoned uploads, and posts to the webhook when stored
+files reach 80% of the budget and again when over it. The figure is an
+estimate from the database; R2's own dashboard is the authority, so also set
+an R2 usage notification (Operations checklist below).
+
+**Database backups.** Supabase's free plan has no backups you can download.
+The `Database backup` GitHub workflow (`.github/workflows/backup.yml`) runs
+daily: it dumps the database, restores the dump into a throw-away Postgres and
+compares every table's row count, then keeps the encrypted dump for 30 days as
+a workflow artifact, away from Supabase and R2. In GitHub → the repository →
+**Settings → Secrets and variables → Actions** add:
+
+- `BACKUP_DATABASE_URL`: Supabase → Connect → **Session pooler** string (port 5432).
+- `BACKUP_PASSPHRASE`: a long generated secret. Keep a copy in your password
+  manager: without it the backups can't be opened.
+
+Run it once by hand (Actions → Database backup → Run workflow) and check it
+goes green. To restore: download the artifact, then
+
+```bash
+openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 -in lowpo11y-*.dump.enc -out lowpo11y.dump
+pg_restore --no-owner --no-privileges --section=pre-data -d "$NEW_DATABASE_URL" lowpo11y.dump
+psql "$NEW_DATABASE_URL" -c "create extension if not exists pg_trgm with schema public"
+pg_restore --no-owner --no-privileges --section=data --section=post-data -d "$NEW_DATABASE_URL" lowpo11y.dump
+```
+
+(`scripts/backup/backup-and-verify.sh` does exactly this and checks the
+result; CI rehearses it on every push.)
+
+**Original files.** Keep the originals somewhere other than R2: your own
+disk, or a second provider with `rclone sync r2:<private-bucket> backup:<bucket>`
+on a schedule.
+
+**Takedowns.** Unpublishing removes the public copy at once, but published
+files are cached for a year at the edge. After a takedown, purge the file's
+URL in Cloudflare → your domain → **Caching → Configuration → Purge Cache**.
 
 ## Running locally
 

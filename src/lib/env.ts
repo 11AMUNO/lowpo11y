@@ -28,6 +28,8 @@ const schema = z
     R2_PUBLIC_BASE_URL: z.url().optional(),
     R2_ENDPOINT: z.url().optional(),
     MAX_UPLOAD_BYTES: z.coerce.number().int().positive().default(512 * 1024 * 1024),
+    /** Usage events accepted per address per hour (abuse limit; counts only). */
+    USAGE_EVENTS_PER_HOUR: z.coerce.number().int().positive().default(600),
     /** Bearer token the daily maintenance job must send (Vercel Cron sends it automatically). */
     CRON_SECRET: z.string().min(16).optional(),
     /** Storage budget in GB; the daily job warns at 80% and when it is exceeded. */
@@ -66,7 +68,8 @@ function localSecret(dataDir: string): string {
 
 export function env(): ServerEnv {
   if (cached) return cached;
-  const parsed = schema.safeParse(process.env);
+  // A variable left blank (as in a copied .env.example) means "not set".
+  const parsed = schema.safeParse(Object.fromEntries(Object.entries(process.env).filter(([, v]) => v !== "")));
   if (!parsed.success) {
     const lines = parsed.error.issues.map((i) => `  ${i.path.join(".")}: ${i.message}`).join("\n");
     throw new Error(`Invalid server configuration:\n${lines}\nSee .env.example and docs/DEPLOYMENT.md.`);

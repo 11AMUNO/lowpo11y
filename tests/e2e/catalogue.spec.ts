@@ -24,7 +24,9 @@ test.describe("catalogue", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Wooden crate" })).toBeVisible();
     await expect(page.getByText("60 tris //", { exact: false }).first()).toBeVisible();
     // The 3D viewer loads the GLB, or reports WebGL is unavailable; it never hangs on "loading".
-    await expect(page.getByRole("button", { name: "Wire" }).or(page.getByText(/couldn't start WebGL|couldn't be loaded/))).toBeEnabled({ timeout: 15_000 });
+    const wire = page.getByRole("button", { name: "Wire" });
+    const failed = page.getByText(/couldn't start WebGL|couldn't be loaded/);
+    await expect.poll(async () => (await wire.isEnabled()) || (await failed.isVisible()), { timeout: 15_000 }).toBe(true);
 
     const zipLink = page.getByRole("link", { name: /Download ZIP/ });
     const href = await zipLink.getAttribute("href");

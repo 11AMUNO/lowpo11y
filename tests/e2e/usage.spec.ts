@@ -23,17 +23,18 @@ test.describe("usage counts", () => {
   test("a visit, a search, a download and a tool export are counted, without identifiers", async ({ page, browser }) => {
     const before = await totals(page);
     const visitor = await browser.newContext({ userAgent: DESKTOP });
-    // Beacon bodies aren't visible to Playwright, so the page keeps a copy of each one it sends.
+    // The page keeps a copy of each event it sends, once the server has answered.
     await visitor.addInitScript(() => {
       const w = window as unknown as { __sent: string[] };
       w.__sent = JSON.parse(sessionStorage.getItem("__sent") ?? "[]");
-      const send = navigator.sendBeacon.bind(navigator);
-      navigator.sendBeacon = (url, data) => {
-        void (data as Blob).text().then((t) => {
-          w.__sent.push(t);
+      const original = window.fetch.bind(window);
+      window.fetch = async (input, init) => {
+        const res = await original(input, init);
+        if (String(input).endsWith("/api/events") && res.status === 204) {
+          w.__sent.push(String(init?.body));
           sessionStorage.setItem("__sent", JSON.stringify(w.__sent));
-        });
-        return send(url, data);
+        }
+        return res;
       };
     });
     const v = await visitor.newPage();

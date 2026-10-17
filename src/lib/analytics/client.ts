@@ -13,9 +13,8 @@ export function track(e: UsageEvent, s = "", extra: { v?: number; g?: boolean } 
   try {
     if (typeof window === "undefined" || optedOut() || sectionOf(location.pathname) === null) return;
     const body = JSON.stringify({ e, s: s.toLowerCase().replace(/[^a-z0-9:_-]/g, "-").slice(0, 64), ...extra });
-    const blob = new Blob([body], { type: "application/json" });
-    if (navigator.sendBeacon?.("/api/events", blob)) return;
-    void fetch("/api/events", { method: "POST", body, headers: { "Content-Type": "application/json" }, keepalive: true }).catch(() => {});
+    // fetch with keepalive survives navigation like sendBeacon, and every engine sends it with an Origin header.
+    void fetch("/api/events", { method: "POST", body, headers: { "Content-Type": "application/json" }, keepalive: true, credentials: "omit" }).catch(() => {});
   } catch {
     // counting is best-effort
   }

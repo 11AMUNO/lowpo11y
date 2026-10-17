@@ -21,6 +21,8 @@ async function main() {
     SEED_ADMIN_PASSWORD: "e2e-admin-password-123",
     DATABASE_URL: "",
     STORAGE_PROVIDER: "local",
+    // Every test browses from one address; the abuse limit would drop later tests' counts.
+    USAGE_EVENTS_PER_HOUR: "1000000",
   };
   execFileSync("pnpm", ["exec", "tsx", "scripts/seed.ts"], { stdio: "inherit", env });
   const child = spawn("pnpm", ["exec", "next", "start", "-p", port, "-H", "127.0.0.1"], {

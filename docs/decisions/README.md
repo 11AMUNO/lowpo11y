@@ -17,3 +17,4 @@ consequences. Superseded records stay in place with a pointer to the newer one.
 | [0009](0009-content-publishing-and-testing.md) | Content publishing rules enforced in the database; only verifiably tested shaders are published; click-to-load YouTube; resources and Godot entries start as drafts | Accepted |
 | [0010](0010-workshop-pipeline.md) | Workshop as an ordered step list on a reusable dependency-graph core with content-hash caching, workers and reproducible ZIP exports | Accepted |
 | [0011](0011-scene-builder.md) | Scene Builder as an immutable, versioned scene document with snapshot undo, mirrored into a code-split vanilla three.js runtime; GLB export checked by re-import | Accepted |
+| [0012](0012-stabilisation.md) | Static CSP with jitless zod, cookieless usage counts, daily maintenance cron, verified encrypted backups outside Supabase/R2, cross-browser smoke | Accepted |

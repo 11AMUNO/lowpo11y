@@ -3,7 +3,7 @@
 Living record of what is built, how it was verified, and what is outstanding.
 Updated at the end of every milestone. Spec: `docs/MASTER_BUILD_PLAN.md`.
 
-_Last updated: 2026-10-17_
+_Last updated: 2026-10-17 (M09)_
 
 ## Milestones
 
@@ -18,7 +18,7 @@ _Last updated: 2026-10-17_
 | M06 Resources & curated video directory | ✅ Done | 331 unit/integration tests locally on PGlite + Postgres 16; 149 E2E incl. shader compile/render, starter upload → download, creator → video → unpublish, axe on 6 new public + 8 new admin pages |
 | M07 Asset Workshop | ✅ Done | 354 unit/integration tests locally on PGlite + Postgres 16; 157 E2E incl. journey 8 (exports byte-identical to the core in Node, reproducible ZIP), axe and phone/desktop layout on /workshop |
 | M08 Scene Builder alpha | ✅ Done | 375 unit/integration tests locally on PGlite + Postgres 16; 163 E2E incl. journey 9 (ten library models, save → open → save byte-identical, GLB read back in Node and passing the Khronos validator, bad files, refresh recovery, 1,000-object stress scene), axe and phone/desktop layout |
-| M09 Stabilisation & deploy | ⏳ Next | — |
+| M09 Stabilisation & deploy | ✅ Done (owner steps in RELEASE_CHECKLIST.md) | 401 unit/integration tests locally on PGlite + Postgres 16; 172 E2E (Chromium) incl. CSP-violation, usage-privacy and licences-audit checks; Firefox/WebKit smoke and backup-restore rehearsal in CI; owner-asset import rehearsed (82 drafts, idempotent) |
 
 ## M00 — Discovery and setup
 
@@ -674,6 +674,78 @@ aimed down its node's −Z as glTF expects); `THREE.Clock` deprecation.
 - Touch works for orbit and selection, but precise editing needs a mouse
   and keyboard.
 
+## M09 — Stabilisation and deploy readiness
+
+**Built** (ADR 0012, `docs/RELEASE_CHECKLIST.md`)
+- **Security review** of the whole codebase (auth, CSRF, RLS, storage keys,
+  uploads, XSS, SSRF, redirects, secrets, errors, DoS). No high-severity
+  issues; every medium and low finding fixed with a test:
+  - open redirect after sign-in through a tab character in `?next=`;
+  - editors could change files, tags, creators, dependencies and pack
+    membership of *published* items (migration 008 + route checks);
+  - strangers could lock the owner out of sign-in (only failures count per
+    email; under attack only failing addresses are stopped);
+  - cleanup never ran (daily `/api/cron/daily`), download counts could be
+    inflated by scripts (counting capped at 300/hour/address);
+  - contact form accepted `//other-site` links;
+  - starter ZIPs: symlinks, ZIP bombs and extension-less executables are now
+    refused (central-directory reader + content check);
+  - scrypt raised to OWASP's N=2^17 with rehash at sign-in; sessions end 60
+    days after sign-in; first-time setup stays closed once any account exists.
+- **Headers**: Content Security Policy, HSTS (https), `X-Frame-Options: DENY`,
+  Permissions-Policy, COOP, nosniff; published files immutable for a year.
+  zod is imported through `@/lib/zod` (jitless) so validation never trips the
+  policy. Found while testing: `/files` and the local storage route used
+  `instanceof`, which fails when route bundles hold separate copies of the
+  storage class; they now check the provider.
+- **Usage counts** (cookieless, no identifiers, DNT/GPC honoured): page views
+  by section, daily new/returning browsers, searches, downloads after search,
+  files saved per tool, 3D preview errors, Core Web Vitals; **Admin → Usage**.
+- **Licences audit**: **Admin → Licences audit** and `pnpm audit:licences
+  [--deep]` (exit 1 on findings): licence, attestation, credit, third-party
+  source, every published file present at its size, bundle LICENSE.txt.
+- **Daily maintenance** (Vercel Cron, `CRON_SECRET`): prunes rate limits,
+  dedupe keys, expired sessions and uploads; storage budget
+  (`STORAGE_BUDGET_GB`) warning at 80% and over, to `ALERT_WEBHOOK_URL`.
+- **Backups**: `scripts/backup/backup-and-verify.sh` (dump → restore into a
+  scratch database → compare every table's rows → AES-256 encrypt) and a
+  daily GitHub workflow keeping 30 days of verified dumps outside
+  Supabase/R2. Restore steps in DEPLOYMENT.md section 9.
+- **Cross-browser**: Firefox and WebKit run the shell, catalogue, converter,
+  palette, Workshop and usage specs in CI.
+- Blank variables in a copied `.env.example` no longer fail start-up (they
+  mean "not set"); the sitemap lists `/workshop` and `/scene-builder`.
+
+**Verified**
+- Unit and integration (PGlite and Postgres 16): redirects, header policy,
+  ZIP reader and project checks, password cost and rehash, absolute session
+  age, setup lock, sign-in limits including the distributed-attack case,
+  editor scope on child tables, housekeeping, storage levels and webhook,
+  usage counting and summaries, staff-only usage rows, licences audit
+  (shallow and deep).
+- E2E: headers on pages and APIs; no CSP violation across the 3D viewer,
+  WebGL shader preview, Seamless, Workshop workers, Scene Builder, Learn,
+  contact and the admin (with a self-check that a blocked image *is*
+  reported); usage counted end to end with payloads limited to name and
+  section and no search words; DNT/GPC send nothing; the endpoint refuses
+  other origins; axe on the Usage and Licences audit pages.
+- Backup rehearsal locally on Postgres 16 (31 tables identical, encrypted
+  file decrypts and lists 31 tables of data) and in CI on every push.
+- **Import rehearsal** of the owner's delivery into a fresh database: dry
+  run 72 models (144 files, 10 `.DS_Store` ignored) and 10 wood textures, no
+  problems or duplicates; import created 82 drafts (models in 50 s including
+  FBX → GLB conversion and thumbnails, textures in 2 s, 44 MB stored); a
+  second run found all 82 already imported and created nothing. All 72
+  converted models also pass the Scene Builder's checks.
+
+**Known limitations**
+- The CSP allows inline scripts (nonces would end static rendering); it
+  limits what injected code could load, connect to or frame.
+- Usage counts are aggregates only: no funnels or retention cohorts.
+- Backups, alerts and the cron need the owner's secrets (checklist).
+- Firefox/WebKit cover the 2D site and tools; WebGL-heavy specs run in
+  Chromium only.
+
 ## Owner deliveries (2026-10-16)
 
 | Item | Contents | Status |
@@ -700,4 +772,5 @@ See `docs/decisions/`.
 | Godot test of the two draft Godot shaders | Publishing them | Drafts; the three.js PSX material is published locally |
 | Review of the eleven draft resource links and licence notes | Publishing them | Drafts with "written from memory" review notes |
 | Creators and videos to list | Learn | Empty state; the admin is ready |
+| Secrets for backups (`BACKUP_DATABASE_URL`, `BACKUP_PASSPHRASE`) and maintenance (`CRON_SECRET`, `STORAGE_BUDGET_GB`, optional `ALERT_WEBHOOK_URL`) | Backups, cleanup and storage alerts in production | The workflow and cron do nothing until set; CI rehearses the backup |
 | Open a Scene Builder GLB export in Blender and Godot | Confirming the acceptance check in real engines | Khronos glTF validator: no errors or warnings |

@@ -7,6 +7,8 @@ N64-inspired games.
 > Status: under active development. See [`docs/IMPLEMENTATION_STATUS.md`](docs/IMPLEMENTATION_STATUS.md)
 > for what works today and how it was verified.
 
+**Run it on your own computer, offline:** `pnpm install && pnpm offline`, see [docs/RUN_OFFLINE.md](docs/RUN_OFFLINE.md).
+
 ## Quick start
 
 Requirements: Node 22+, pnpm 10 (`corepack enable`).
