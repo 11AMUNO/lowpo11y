@@ -8,6 +8,7 @@ const TOOLS: [string, string][] = [
   ["/tools/palette", "+ Sample"],
   ["/tools/texture-atlas", "+ Sample"],
   ["/tools/model-inspector", "+ Crate"],
+  ["/tools/bitmap-font", "+ Sample font"],
 ];
 
 /** Top and bottom of each column of the tool's workspace grid, in page order. */

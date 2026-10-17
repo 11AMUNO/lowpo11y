@@ -11,6 +11,7 @@ const PAGES = [
   "/tools/palette",
   "/tools/texture-atlas",
   "/tools/model-inspector",
+  "/tools/bitmap-font",
   "/assets",
   "/assets?view=list&type=model",
   "/textures",
@@ -103,6 +104,17 @@ test("model inspector with an animated model loaded has no WCAG A/AA violations"
   await page.goto("/tools/model-inspector");
   await page.getByRole("button", { name: "+ Rigged pole" }).click();
   await expect(page.getByRole("region", { name: "Animations" })).toBeVisible({ timeout: 20_000 });
+  const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).exclude('[aria-hidden="true"]').analyze();
+  expect(results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
+});
+
+test("bitmap font generator with a font loaded has no WCAG A/AA violations", async ({ page }) => {
+  await page.goto("/tools/bitmap-font");
+  await page.getByRole("button", { name: "+ Sample font" }).click();
+  await expect(page.getByRole("region", { name: "Preview" }).getByRole("status")).toContainText("GLYPHS", { timeout: 20_000 });
+  await page.getByRole("button", { name: "Drop shadow" }).click();
+  await page.getByText("Licence in the font").click();
+  await page.getByRole("img", { name: /^Sample text drawn/ }).click({ position: { x: 20, y: 16 } });
   const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).exclude('[aria-hidden="true"]').analyze();
   expect(results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
 });

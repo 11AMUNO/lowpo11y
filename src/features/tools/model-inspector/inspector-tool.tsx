@@ -467,7 +467,10 @@ function Listing({ label, count, children }: { label: string; count: number; chi
       <h2 className="type-panel mb-2">
         // {label} <span className="text-muted">{count}</span>
       </h2>
-      <ul className="lp-scroll flex max-h-56 flex-col gap-1.5 overflow-y-auto text-[12.5px]">{children}</ul>
+      {/* focusable so a long list can be scrolled from the keyboard */}
+      <ul tabIndex={0} className="lp-scroll flex max-h-56 flex-col gap-1.5 overflow-y-auto text-[12.5px] outline-none focus-visible:ring-1 focus-visible:ring-bright">
+        {children}
+      </ul>
     </section>
   );
 }

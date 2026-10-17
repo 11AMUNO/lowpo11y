@@ -8,6 +8,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
 import { DEMO_MODELS } from "@/lib/demo/models";
+import { buildPixelFont } from "@/lib/demo/pixel-font";
 import { buildRiggedPole } from "@/lib/demo/rigged";
 import { DEMO_TEXTURES, renderDemoTexture } from "@/lib/demo/textures";
 import type { RGBAImage } from "@/lib/processing/image";
@@ -35,6 +36,10 @@ async function main() {
   await writeFile(path.join(OUT, "models", "demo-wooden-crate.glb"), await crate.build());
   await writeFile(path.join(OUT, "models", "demo-rigged-pole.glb"), buildRiggedPole(new Uint8Array(await encodePng(renderDemoTexture("demo-uv-checker", 128)))));
   console.log("models demo-wooden-crate.glb, demo-rigged-pole.glb");
+  // sample font for the bitmap font tool (drawn for LOWPO11Y, CC0)
+  await mkdir(path.join(OUT, "fonts"), { recursive: true });
+  await writeFile(path.join(OUT, "fonts", "lowpo11y-pixel.ttf"), buildPixelFont());
+  console.log("font lowpo11y-pixel.ttf");
 }
 
 main().catch((err) => {

@@ -85,12 +85,12 @@ export const TOOLS: ToolDefinition[] = [
   {
     slug: "bitmap-font",
     name: "Bitmap font generator",
-    summary: "Turn a licensed TTF or OTF into a pixel font atlas with BMFont metrics for your engine.",
+    summary: "Turn a licensed TTF or OTF into BMFont pages: character ranges, 1-bit or smooth edges, outline, shadow and kerning, with a preview drawn from the exported files.",
     route: "/tools/bitmap-font",
     category: "type",
-    status: "in-development",
+    status: "available",
     processing: "local",
-    version: "0.0.0",
+    version: "1.0.0",
   },
   {
     slug: "decal",
