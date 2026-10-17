@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { asAdmin } from "./fixtures";
 
 /**
@@ -10,7 +10,7 @@ import { asAdmin } from "./fixtures";
 // Headless browsers are filtered out as bots, so these tests present an ordinary desktop browser.
 const DESKTOP = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36";
 
-async function totals(page: import("@playwright/test").Page) {
+async function totals(page: Page) {
   await asAdmin(page, "/admin/usage?days=7");
   const text = await page.locator("main").innerText();
   const n = (label: string) => Number(new RegExp(`${label}\\s+([\\d,]+)`, "i").exec(text)?.[1]?.replace(/,/g, "") ?? "0");
