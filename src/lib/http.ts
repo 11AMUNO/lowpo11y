@@ -29,6 +29,10 @@ export function jsonError(err: unknown): Response {
       { status: 400 },
     );
   }
+  // A publishing rule in the database refused the change; the trigger's message is written for people.
+  if ((err as { code?: string } | null)?.code === "23514" && /^(Shader|Starter project|Creator|Tutorial|Resource|Asset) /.test((err as Error).message)) {
+    return Response.json({ error: { code: "not_ready", message: (err as Error).message + "." } }, { status: 400 });
+  }
   // Row-level security refused the write: the role isn't allowed to do this.
   if ((err as { code?: string } | null)?.code === "42501" || /row-level security/i.test((err as Error | null)?.message ?? "")) {
     return Response.json({ error: { code: "forbidden", message: "Your role can't make this change. Ask an admin." } }, { status: 403 });

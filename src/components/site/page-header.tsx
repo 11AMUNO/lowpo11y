@@ -50,6 +50,7 @@ export function Prose({ children, className }: { children: ReactNode; className?
         "[&_p]:my-4 [&_ul]:my-4 [&_ul]:list-['>_'] [&_ul]:pl-5 [&_ol]:my-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-1.5 [&_li]:pl-1 [&_li::marker]:text-muted",
         "[&_a]:text-bright [&_a]:underline [&_strong]:font-medium [&_strong]:text-bright",
         "[&_code]:border [&_code]:border-rule-strong [&_code]:bg-sunken [&_code]:px-1 [&_code]:text-[0.9em]",
+        "[&_pre]:my-4 [&_pre]:border [&_pre]:border-rule-strong [&_pre]:bg-sunken [&_pre]:p-3 [&_pre]:text-[13px] [&_pre]:leading-snug [&_pre]:break-words [&_pre]:whitespace-pre-wrap [&_pre_code]:border-0 [&_pre_code]:bg-transparent [&_pre_code]:p-0",
         className,
       )}
     >

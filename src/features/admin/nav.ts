@@ -4,6 +4,10 @@ export const ADMIN_NAV: { label: string; href: string; adminOnly?: boolean }[] =
   { label: "Assets", href: "/admin/assets" },
   { label: "Import", href: "/admin/import" },
   { label: "Collections", href: "/admin/collections" },
+  { label: "Shaders", href: "/admin/shaders" },
+  { label: "Starters", href: "/admin/starter-projects" },
+  { label: "Learn", href: "/admin/learn" },
+  { label: "Resources", href: "/admin/resources" },
   { label: "Messages", href: "/admin/messages" },
   { label: "Audit log", href: "/admin/audit", adminOnly: true },
 ];

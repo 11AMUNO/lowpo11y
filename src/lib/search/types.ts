@@ -7,7 +7,8 @@ export type SearchResultKind =
   | "shader"
   | "starter"
   | "tutorial"
-  | "creator";
+  | "creator"
+  | "resource";
 
 export interface SearchResult {
   id: string;

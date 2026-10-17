@@ -121,6 +121,26 @@ Origin, the role (publishing, published edits and deletion are admin-only) and
 write an audit entry. Editors can draft and submit for review. The database
 enforces the same rules again (RLS and publish guards).
 
+## Shaders, starter projects, Learn and resources
+
+| Path | Purpose |
+|---|---|
+| `src/lib/content/schemas.ts` | Input validation, the plan's Learn taxonomy, engines, YouTube id parsing, `parsePatch` for partial updates |
+| `src/lib/content/repository.ts` | Admin reads and writes for all five kinds under the caller's RLS context |
+| `src/lib/content/checklist.ts` | The publishing rules as a checklist (mirrors the migration 006 triggers) |
+| `src/lib/content/files.ts` | Starter ZIP upload (signed, checked: no binaries, shell scripts or unsafe paths), shader bundle publishing, unpublishing |
+| `src/lib/content/bundles.ts` | Deterministic shader ZIP: code file, README (explanation, setup, limitations, tested line, changelog), LICENSE.txt |
+| `src/lib/content/public.ts` | Public queries with explicit columns (no review notes or storage keys), download counting, palette search, sitemap |
+| `src/lib/content/youtube.ts` | oEmbed check so editors can confirm a video exists and who made it |
+| `src/features/admin/content/*` | One field-driven editor for all five kinds, with a live checklist and a three.js shader preview |
+| `src/features/content/*` | Cards, code view, click-to-load video player, live shader preview (three.js loaded on demand) |
+| `src/lib/demo/content.ts`, `scripts/seed-content.ts` | Starter shaders and resource links (local demo publishes the tested three.js shader; elsewhere everything is a draft) |
+
+Publishing is guarded in the database (ADR 0009). Admin routes live under
+`/api/admin/content/{kind}/…`; public downloads under
+`/api/shaders/{slug}/download` and `/api/starter-projects/{slug}/download`
+(counted, then redirected to the public bucket).
+
 ## Environments
 
 | | Database | Storage | Data dir |

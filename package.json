@@ -21,6 +21,7 @@
     "demo:generate": "tsx scripts/generate-demo-content.ts",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:seed": "tsx scripts/seed.ts",
+    "db:seed-content": "tsx scripts/seed-content.ts",
     "db:reset": "tsx scripts/reset-local.ts",
     "admin:create": "tsx scripts/create-admin.ts",
     "import:assets": "tsx scripts/import-assets.ts",

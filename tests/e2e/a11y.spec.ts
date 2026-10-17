@@ -20,6 +20,12 @@ const PAGES = [
   "/textures/demo-red-brick",
   "/collections",
   "/collections/demo-industrial-blockout-kit",
+  "/shaders",
+  "/shaders/psx-material-threejs",
+  "/starter-projects",
+  "/learn",
+  "/learn/creators",
+  "/resources",
   "/assets/no-such-asset",
   "/about",
   "/licences",
@@ -131,12 +137,23 @@ test("decal maker with an image keyed has no WCAG A/AA violations", async ({ pag
 });
 
 test.describe("accessibility (admin)", () => {
-  for (const path of ["/admin", "/admin/assets", "/admin/assets/new", "/admin/import", "/admin/collections", "/admin/messages", "/admin/audit", "editor"]) {
+  const PAGES = ["/admin", "/admin/assets", "/admin/assets/new", "/admin/import", "/admin/collections", "/admin/messages", "/admin/audit", "editor"];
+  PAGES.push("/admin/shaders", "/admin/shaders/new", "/admin/starter-projects", "/admin/learn/videos", "/admin/learn/creators", "/admin/resources", "shader editor", "resource editor");
+  for (const path of PAGES) {
     test(`${path} has no WCAG A/AA violations`, async ({ page }) => {
       if (path === "editor") {
         await asAdmin(page, "/admin/assets?q=wooden+crate");
         await page.getByRole("link", { name: "Wooden crate" }).click();
         await page.waitForURL(/\/admin\/assets\/[0-9a-f-]{36}$/);
+      } else if (path === "shader editor") {
+        await asAdmin(page, "/admin/shaders?q=psx-material");
+        await page.getByRole("link", { name: "PSX material for three.js" }).click();
+        await page.getByRole("button", { name: "Compile and preview" }).click();
+        await expect(page.locator("[data-preview-state]")).toHaveAttribute("data-preview-state", "ready", { timeout: 20_000 });
+      } else if (path === "resource editor") {
+        await asAdmin(page, "/admin/resources?q=poly-haven");
+        await page.getByRole("link", { name: "Poly Haven" }).click();
+        await page.waitForURL(/\/admin\/resources\/[0-9a-f-]{36}$/);
       } else {
         await asAdmin(page, path);
       }

@@ -37,7 +37,7 @@ export const FOOTER_NAV: { heading: string; items: { label: string; href: string
   {
     heading: "Learn",
     items: [
-      { label: "Tutorials", href: "/learn" },
+      { label: "Videos", href: "/learn" },
       { label: "Creators", href: "/learn/creators" },
       { label: "Resources", href: "/resources" },
     ],

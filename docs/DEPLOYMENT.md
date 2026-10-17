@@ -145,6 +145,19 @@ Forgot your password? From a computer with the repo:
 `DATABASE_URL="…" pnpm admin:create --email you@example.com --name "You"`
 resets it (and signs out all sessions).
 
+**Optional: starter content.** To get LOWPO11Y's shaders and a list of useful
+resource links to review, run this once from your computer:
+
+```bash
+DATABASE_URL="…" pnpm db:seed-content
+```
+
+Everything arrives as a **draft**. Nothing is public until you open it in
+**Admin → Shaders** or **Admin → Resources**, check it, choose a licence where
+needed, set the review or test date and press **Publish**. The site won't let
+you publish an entry with something missing. Run it again safely: it skips
+anything already there.
+
 ---
 
 ## 6. Check it

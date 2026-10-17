@@ -16,8 +16,9 @@ const KIND_LABEL: Record<SearchResult["kind"], string> = {
   collection: "COLLECTION",
   shader: "SHADER",
   starter: "STARTER",
-  tutorial: "TUTORIAL",
+  tutorial: "VIDEO",
   creator: "CREATOR",
+  resource: "RESOURCE",
 };
 
 const STATIC_INDEX = buildStaticIndex();

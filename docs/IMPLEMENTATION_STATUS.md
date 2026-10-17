@@ -15,8 +15,8 @@ _Last updated: 2026-10-17_
 | M03 Asset CMS + catalogue | ✅ Done | 221 unit/integration tests (PGlite + Postgres 16 + S3); 67 E2E incl. journeys 1–3 and axe on 10 public + 8 admin pages |
 | M04 Initial processing tools | ✅ Done | 168 unit/integration tests locally (CI repeats the DB and storage suites on Postgres 16 + S3); 89 E2E incl. journey 4, Seamless byte-identical to the original (232 comparisons), axe on all three tools |
 | M05 Advanced tools | ✅ Done | 216 unit/integration tests locally (CI adds the Postgres 16 + S3 runs); 124 E2E incl. journeys 5–7, axe and phone/desktop layout checks on all eight tools |
-| M06 Resources & curated video directory | ⏳ Next | — |
-| M07 Asset Workshop | ⬜ Not started | — |
+| M06 Resources & curated video directory | ✅ Done | 331 unit/integration tests locally on PGlite + Postgres 16; 149 E2E incl. shader compile/render, starter upload → download, creator → video → unpublish, axe on 6 new public + 8 new admin pages |
+| M07 Asset Workshop | ⏳ Next | — |
 | M08 Scene Builder alpha | ⬜ Not started | — |
 | M09 Stabilisation & deploy | ⬜ Not started | — |
 
@@ -85,7 +85,7 @@ persistence, skip link, 404, robots/sitemap, mobile drawer, no horizontal
 overflow at 390px, axe audits). Screenshots reviewed at 1440px and 390px.
 
 **Known limitations**
-- Section pages other than Tools are honest holding pages until M03/M06.
+- Section pages other than Tools were honest holding pages until M03/M06 (all replaced now).
 - Legal page copy is a starting draft for the owner to review before launch.
 
 ## M02 — Infrastructure
@@ -419,6 +419,94 @@ Licences page.
   claimed only for the BMFont format as read by our renderer; no SDF/MSDF.
 - Decal: crop is numeric (no drag handles) and rotation is in 90° steps.
 
+## M06 — Resources and curated video directory
+
+**Built**
+- **Shaders & Code** (`/shaders`, `/shaders/[slug]`): engine filter, search,
+  cards with the tested line; detail pages with a live preview for three.js
+  entries (the entry's own GLSL compiled in the browser on a small courtyard
+  scene, with sliders read from `@control` annotations, 240p/480p/full render
+  size, a comparison with three.js's standard material, pause), line-numbered
+  code with copy, explanation, setup, limitations, changelog, tested-with,
+  licence, source and a download ZIP (code + README + LICENSE, SHA-256 shown,
+  downloads counted).
+- **Starter projects** (`/starter-projects`, `/starter-projects/[slug]`):
+  what's included, description, tested-with, licence, checksum and download.
+  ZIPs are uploaded privately with a signed URL, checked (PK header, readable
+  archive, no executables, shell scripts or unsafe paths), and copied byte
+  for byte to the public bucket when published.
+- **Learn** (`/learn`, `/learn/videos/[slug]`, `/learn/creators`,
+  `/learn/creators/[slug]`): the plan's topic taxonomy, level, engine and
+  featured filters with counts, search; video pages with a click-to-load
+  youtube-nocookie player (nothing loads from YouTube before play), our
+  summary, details, the creator and links to the source; creator pages list
+  their videos; third-party ownership stated on every page.
+- **Resources** (`/resources`): grouped by category with jump links, the
+  site's host, our description, a licence note and the review date; links
+  only, nothing rehosted.
+- **Admin** (`/admin/shaders`, `/admin/starter-projects`, `/admin/learn/videos`,
+  `/admin/learn/creators`, `/admin/resources`): lists with status filters and
+  search; a new-entry form; one editor for all five kinds with a live
+  publishing checklist, unsaved-change tracking, publish / republish
+  (rebuilds the shader ZIP) / unpublish / archive, creator approval, delete
+  (admins), starter ZIP upload, "Check on YouTube" (oEmbed: confirms the
+  video exists and shows its channel) and a three.js shader preview that
+  compiles the code in the form before it's saved.
+- **Rules in the database** (migration 006, ADR 0009): publishing triggers
+  for every kind, slug formats, editors limited to drafts and review,
+  unapproving or deleting a creator unpublishes their videos.
+- Command palette search, sitemap, landing-page highlights and JSON-LD
+  (SoftwareSourceCode, VideoObject) for the new content.
+- **Content**: an original PSX material for three.js (vertex snapping,
+  affine mapping, fog, 15-bit dithered colour), published by the local demo
+  seed because the E2E suite compiles and renders it; two Godot 4 shaders as
+  drafts (not run in Godot yet); eleven resource links as drafts (this
+  environment can't reach the sites, so links and licence notes need
+  checking). `pnpm db:seed-content` adds the same as drafts to production.
+
+**Verified**
+- Integration (PGlite and Postgres 16): every publishing rule refuses
+  incomplete rows, including direct SQL; editors can't publish or approve,
+  and can't edit live rows; visitors see only published rows; soft delete;
+  slug format and uniqueness; shader bundle published, replaced on republish
+  and removed on unpublish, with no public file left when publishing is
+  refused; starter upload checks (binaries, shell scripts, non-ZIPs, wrong
+  extension, another person's upload) and publish/unpublish; creator
+  unapproval and deletion unpublish their videos.
+- Unit: YouTube id parsing (watch, youtu.be, shorts, embed, live, rejects
+  look-alikes), partial updates keep unsent fields, deterministic shader
+  bundles, oEmbed handling, the shader file convention and controls.
+- E2E: the PSX shader compiles and renders (colour count proves the
+  quantiser runs: at most 4³ colours at four levels), the comparison mode
+  switches material, the download holds the same code; untested drafts are
+  404 and can't be published; a broken shader shows the compiler's message
+  in the admin preview; starter project upload (unsafe archive refused),
+  publish and download of identical bytes; creator approval → video publish
+  → topic filter → click-to-load player → creator page → unapproval takes
+  both down; resource review → publish → listed under its category; search
+  finds the shader. axe WCAG 2.2 AA on the six public pages (CRT on and off),
+  the video, creator and starter pages with content, and eight admin pages
+  including the shader editor with the preview running.
+
+**Bugs found and fixed**: Zod applies defaults to `.partial()` fields, so a
+partial save would have blanked every field it didn't send (`parsePatch`);
+pausing the shader preview and then moving a slider recursed between the
+orbit controls' "change" event and the redraw until the stack overflowed;
+`ON DELETE SET NULL` on a creator with published videos would have failed
+the publishing trigger (videos are now unpublished first); the setup
+instructions' code sample broke the numbered list.
+
+**Known limitations**
+- Nothing on Learn or Starter projects is published yet: videos and creators
+  need someone to watch and review them, and no starter project has been
+  opened in an engine. Godot entries need a Godot test before publishing.
+- Live previews exist only for three.js shaders that follow the two-stage
+  file convention; other engines show code, documentation and the download.
+- No curated playlists or visitor suggestions yet (the plan lists
+  suggestions as a later feature).
+- YouTube Data API enrichment isn't used; oEmbed confirms a video exists and
+  who published it, nothing more.
+
 ## Owner deliveries (2026-10-16)
 
 | Item | Contents | Status |
@@ -442,3 +530,6 @@ See `docs/decisions/`.
 | Production env vars (Supabase `DATABASE_URL`, R2 keys, `APP_SECRET`) | Deployment | Local PGlite + filesystem storage |
 | Domain name | Canonical URLs, R2 public domain | `NEXT_PUBLIC_APP_URL` placeholder |
 | Licence choice for owner originals | Publishing owner assets | Demo content uses CC0 |
+| Godot test of the two draft Godot shaders | Publishing them | Drafts; the three.js PSX material is published locally |
+| Review of the eleven draft resource links and licence notes | Publishing them | Drafts with "written from memory" review notes |
+| Creators and videos to list | Learn | Empty state; the admin is ready |

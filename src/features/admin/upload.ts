@@ -52,6 +52,20 @@ export async function uploadAssetFile(
   return api(`/api/admin/uploads/${id}/complete`, { body: { primary: opts.primary }, signal: opts.signal });
 }
 
+/** Uploads a starter project's ZIP the same way; the server checks the archive before filing it. */
+export async function uploadStarterFile(
+  starterId: string,
+  file: File,
+  opts: { onProgress?: (fraction: number) => void; signal?: AbortSignal } = {},
+): Promise<{ file: { name: string; sizeBytes: number; sha256: string } }> {
+  const { id, upload } = await api<{ id: string; upload: { url: string; headers: Record<string, string> } }>(`/api/admin/content/starter/${starterId}/upload`, {
+    body: { filename: file.name, size: file.size, contentType: file.type || "application/zip" },
+    signal: opts.signal,
+  });
+  await put(upload.url, upload.headers, file, opts.onProgress, opts.signal);
+  return api(`/api/admin/content/starter/${starterId}/upload/${id}`, { body: {}, signal: opts.signal });
+}
+
 /** Sensible default purpose from the filename. */
 export function guessPurpose(name: string): UploadPurpose {
   const n = name.toLowerCase();

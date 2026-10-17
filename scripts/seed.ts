@@ -10,6 +10,7 @@ import { migrate } from "@/lib/db/migrate";
 import { txOn } from "@/lib/db";
 import { env } from "@/lib/env";
 import { createUser } from "@/lib/auth/sessions";
+import { seedSiteContent } from "@/lib/demo/content";
 import { seedDemoContent } from "@/lib/demo/seed";
 import { getStorage } from "@/lib/storage";
 
@@ -39,6 +40,8 @@ async function main() {
       const t0 = Date.now();
       const r = await seedDemoContent(txOn(db, { kind: "user", userId: admin.id, role: "admin" }), getStorage(), admin.id, (s) => console.log(s));
       console.log(`> demo content: ${r.created.length} created, ${r.skipped.length} already present (${Date.now() - t0} ms)`);
+      const c = await seedSiteContent(txOn(db, { kind: "user", userId: admin.id, role: "admin" }), getStorage(), { publish: true, siteUrl: e.NEXT_PUBLIC_APP_URL }, (s) => console.log(s));
+      console.log(`> shaders and resources: ${c.created.length} created, ${c.skipped.length} already present`);
     }
   } finally {
     await db.close();

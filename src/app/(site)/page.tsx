@@ -8,6 +8,9 @@ import { TexturePage, type TexturePageTile } from "@/components/site/texture-pag
 import { AssetCard } from "@/features/catalog/asset-card";
 import { TOOLS } from "@/features/tools/registry";
 import { catalogCounts, latestAssets } from "@/lib/assets/catalog";
+import { testedLine } from "@/lib/content/bundles";
+import { listPublicCreators, listPublicShaders, listPublicStarters, listPublicTutorials } from "@/lib/content/public";
+import { engineLabel } from "@/lib/content/schemas";
 import { PUBLIC, withDb } from "@/lib/db";
 import { formatCount } from "@/lib/format";
 import { site } from "@/lib/site";
@@ -28,11 +31,23 @@ const PIPELINE = [
 ];
 
 export default async function HomePage() {
-  const { counts, textures, latest } = await withDb(PUBLIC, async (q) => ({
+  const { counts, textures, latest, shaders, starters, videos, creators } = await withDb(PUBLIC, async (q) => ({
     counts: await catalogCounts(q),
     textures: await latestAssets(q, 12, ["texture"]),
     latest: await latestAssets(q, 6),
+    shaders: (await listPublicShaders(q)).slice(0, 3),
+    starters: (await listPublicStarters(q)).slice(0, 2),
+    videos: (await listPublicTutorials(q)).slice(0, 3),
+    creators: (await listPublicCreators(q)).slice(0, 3),
   }));
+  const row = (href: string, title: string, meta: string) => (
+    <li key={href} className="border-b border-dashed border-rule-strong py-2 last:border-0">
+      <Link href={href} className="text-[13.5px] text-fg hover:text-bright hover:underline">
+        {title}
+      </Link>
+      <p className="mt-0.5 text-xs text-muted">{meta}</p>
+    </li>
+  );
   const tiles: TexturePageTile[] = textures.map((t) => ({
     src: t.thumbnail_url,
     title: t.title,
@@ -150,6 +165,33 @@ export default async function HomePage() {
             ))}
           </ul>
         </Panel>
+      ) : null}
+
+      {shaders.length || starters.length || videos.length || creators.length ? (
+        <div className={`mt-4 grid items-start gap-4 ${(shaders.length || starters.length) && (videos.length || creators.length) ? "lg:grid-cols-2" : ""}`}>
+          {shaders.length || starters.length ? (
+            <Panel
+              title={<>Shaders & code <span className="tracking-[0.06em] text-muted normal-case">tested before listed</span></>}
+              aside={<Link href="/shaders" className="font-ocr text-xs tracking-[0.08em] text-muted uppercase hover:text-bright">[ All shaders ]</Link>}
+            >
+              <ul>
+                {shaders.map((s) => row(`/shaders/${s.slug}`, s.title, testedLine(s)))}
+                {starters.map((p) => row(`/starter-projects/${p.slug}`, p.title, `Starter project // ${engineLabel(p.engine)}${p.engine_versions ? ` ${p.engine_versions}` : ""}`))}
+              </ul>
+            </Panel>
+          ) : null}
+          {videos.length || creators.length ? (
+            <Panel
+              title={<>Learn <span className="tracking-[0.06em] text-muted normal-case">videos we recommend</span></>}
+              aside={<Link href="/learn" className="font-ocr text-xs tracking-[0.08em] text-muted uppercase hover:text-bright">[ All videos ]</Link>}
+            >
+              <ul>
+                {videos.map((t) => row(`/learn/videos/${t.slug}`, t.title, `by ${t.creator_name}${t.topic ? ` // ${t.topic}` : ""}`))}
+                {videos.length ? null : creators.map((c) => row(`/learn/creators/${c.slug}`, c.name, c.categories.join(", ") || "Creator"))}
+              </ul>
+            </Panel>
+          ) : null}
+        </div>
       ) : null}
 
       <Panel title={<>Tools <span className="tracking-[0.06em] text-muted normal-case">run on your machine</span></>} className="mt-4" aside={<Link href="/tools" className="font-ocr text-xs tracking-[0.08em] text-muted uppercase hover:text-bright">[ All tools ]</Link>}>

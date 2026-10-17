@@ -33,6 +33,7 @@ the app uses an embedded Postgres (PGlite) and stores files on disk under
 | `pnpm check` | lint + typecheck + test |
 | `pnpm db:seed` / `pnpm db:reset` | Local admin + demo library / wipe local data |
 | `pnpm admin:create` | Create or reset a staff account |
+| `pnpm db:seed-content` | Add LOWPO11Y's starter shaders and resource links as drafts (works on production too; never publishes) |
 | `pnpm import:assets <folder>` | Bulk-import models and textures as drafts ([guide](docs/IMPORTING.md)) |
 
 ## Documentation
