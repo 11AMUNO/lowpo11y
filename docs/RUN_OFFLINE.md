@@ -4,7 +4,20 @@ The whole site runs on one computer with no internet and no accounts: the
 database is embedded, files are stored on your disk, and fonts and 3D
 libraries are bundled. Only installing needs the internet, once.
 
-## One-time setup
+## Quickest way
+
+1. Install **Node.js 22** (https://nodejs.org, the LTS installer).
+2. Unzip the project and double-click **Start LOWPO11Y.command** (Mac) or
+   **Start LOWPO11Y.bat** (Windows). The first run installs and builds (a few
+   minutes, needs internet once); your browser then opens the site. Later runs
+   start in seconds, offline. Close the terminal window to stop it.
+
+   On a Mac the first time, if it says the file "can't be opened", right-click
+   it → **Open** → **Open**.
+
+## By hand
+
+### One-time setup
 
 1. Install **Node.js 22** (https://nodejs.org, the LTS installer).
 2. Get the project: on GitHub open **11amuno/lowpo11y**, switch to the branch
@@ -17,7 +30,7 @@ libraries are bundled. Only installing needs the internet, once.
    pnpm install
    ```
 
-## Start it
+### Start it
 
 ```bash
 pnpm offline
