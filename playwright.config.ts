@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const PORT = Number(process.env.E2E_PORT ?? 3100);
+const CROSS_BROWSER = ["**/shell.spec.ts", "**/catalogue.spec.ts", "**/tools-converter.spec.ts", "**/tools-palette.spec.ts", "**/workshop.spec.ts", "**/usage.spec.ts"];
 const baseURL = process.env.E2E_BASE_URL ?? `http://127.0.0.1:${PORT}`;
 
 /**
@@ -25,6 +26,14 @@ export default defineConfig({
   },
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } },
+    // CI's cross-browser job: the public site, catalogue, 2D tools and the Workshop in Firefox and WebKit.
+    ...(process.env.E2E_CROSS_BROWSER
+      ? (["firefox", "webkit"] as const).map((name) => ({
+          name,
+          testMatch: CROSS_BROWSER,
+          use: { ...devices[name === "firefox" ? "Desktop Firefox" : "Desktop Safari"], viewport: { width: 1440, height: 900 } },
+        }))
+      : []),
   ],
   webServer: process.env.E2E_BASE_URL
     ? undefined

@@ -45,6 +45,16 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+      - name: Backup and restore rehearsal
+        env:
+          PG: postgres://postgres:postgres@localhost:5432
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client >/dev/null
+          pg_dump --version
+          psql -q "$PG/postgres" -c "create database backup_src" -c "create database backup_scratch"
+          DATABASE_URL=$PG/backup_src pnpm db:migrate
+          psql -q "$PG/backup_src" -c "insert into users (email, password_hash, display_name, role) values ('ci@example.test', 'x', 'CI', 'admin')"
+          SOURCE_URL=$PG/backup_src SCRATCH_URL=$PG/backup_scratch OUT=backup BACKUP_PASSPHRASE=ci-rehearsal scripts/backup/backup-and-verify.sh
       - run: pnpm build
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm e2e
@@ -52,5 +62,30 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
+          path: playwright-report
+          retention-days: 7
+
+  cross-browser:
+    # A smoke subset of the E2E suite in Firefox and WebKit (Safari's engine).
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      E2E_CROSS_BROWSER: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm exec playwright install --with-deps firefox webkit
+      - run: pnpm e2e --project=firefox --project=webkit
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-cross-browser
           path: playwright-report
           retention-days: 7

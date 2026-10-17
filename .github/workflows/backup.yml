@@ -1,0 +1,63 @@
+name: Database backup
+
+# Daily: dump the production database, restore the dump into a scratch
+# Postgres and compare every table's row count, then keep the encrypted dump
+# as a workflow artifact for 30 days (outside Supabase and R2).
+# Needs repository secrets BACKUP_DATABASE_URL (a direct, read-capable
+# connection string) and BACKUP_PASSPHRASE. See docs/DEPLOYMENT.md.
+on:
+  schedule:
+    - cron: "23 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: scratch
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check configuration
+        id: cfg
+        env:
+          URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          PASS: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          if [ -z "$URL" ] || [ -z "$PASS" ]; then
+            echo "::warning::Backups are not configured: add the BACKUP_DATABASE_URL and BACKUP_PASSPHRASE secrets."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.cfg.outputs.run == 'true'
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSo /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client-16 >/dev/null
+      - if: steps.cfg.outputs.run == 'true'
+        name: Dump, restore check, encrypt
+        env:
+          SOURCE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          SCRATCH_URL: postgres://postgres:postgres@localhost:5432/scratch
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+          OUT: backup
+        run: PATH=/usr/lib/postgresql/16/bin:$PATH scripts/backup/backup-and-verify.sh
+      - if: steps.cfg.outputs.run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: lowpo11y-db-${{ github.run_id }}
+          path: backup/*.enc
+          retention-days: 30
+          if-no-files-found: error
