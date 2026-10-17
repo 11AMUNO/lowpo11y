@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const TOOLS = ["/tools/seamless", "/tools/texture-converter", "/tools/resizer"];
+const TOOLS = ["/tools/seamless", "/tools/texture-converter", "/tools/resizer", "/tools/palette"];
 
 /** Top and bottom of each column of the tool's workspace grid, in page order. */
 const columns = (page: Page) =>

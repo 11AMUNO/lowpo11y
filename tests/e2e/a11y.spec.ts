@@ -8,6 +8,7 @@ const PAGES = [
   "/tools/seamless",
   "/tools/texture-converter",
   "/tools/resizer",
+  "/tools/palette",
   "/assets",
   "/assets?view=list&type=model",
   "/textures",
@@ -70,6 +71,17 @@ test("batch resizer with files resized has no WCAG A/AA violations", async ({ pa
   await expect(page.getByRole("button", { name: "All resized" })).toBeVisible({ timeout: 20_000 });
   await page.getByRole("button", { name: "Scale", exact: true }).click();
   await page.getByRole("button", { name: "WEBP", exact: true }).click();
+  const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).exclude('[aria-hidden="true"]').analyze();
+  expect(results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
+});
+
+test("palette generator with a palette and image loaded has no WCAG A/AA violations", async ({ page }) => {
+  await page.goto("/tools/palette");
+  await page.getByRole("button", { name: /^Rust belt/ }).click();
+  await page.getByRole("button", { name: "+ Sample" }).click();
+  await expect(page.getByRole("region", { name: "Preview" }).getByRole("status")).toContainText("MAPPED TO", { timeout: 20_000 });
+  await page.getByRole("button", { name: "Deutan" }).click();
+  await page.getByText("Paste colours").click();
   const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).exclude('[aria-hidden="true"]').analyze();
   expect(results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
 });

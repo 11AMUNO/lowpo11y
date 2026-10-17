@@ -65,12 +65,12 @@ export const TOOLS: ToolDefinition[] = [
   {
     slug: "palette",
     name: "Palette generator",
-    summary: "Extract a palette from a reference image, edit and lock colours, and export GPL, JSON or PNG swatches.",
+    summary: "Extract a palette from a reference image, edit and lock colours, check colour-blind readability, preview a texture in it, and export GPL, HEX, JSON or PNG swatches.",
     route: "/tools/palette",
     category: "colour",
-    status: "in-development",
+    status: "available",
     processing: "local",
-    version: "0.0.0",
+    version: "1.0.0",
   },
   {
     slug: "model-inspector",

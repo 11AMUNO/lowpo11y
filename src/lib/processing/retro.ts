@@ -6,14 +6,13 @@
  * These are visual effects. Reducing colours here does not by itself make a
  * texture fit any console's VRAM or CLUT rules.
  */
-import { blueNoise } from "./blue-noise";
-import { bayerMatrix } from "./dither";
 import { cloneImage, type RGB, type RGBAImage } from "./image";
-import { countColours, medianCut, paletteMatcher, quantizeChannel } from "./quantize";
+import { countColours, medianCut, quantizeChannel } from "./quantize";
 import { hash2 } from "./random";
+import { remapImage, type DitherMode } from "./remap";
 import { fitTo, longSideSize, type Fit, type Sampling } from "./resample";
 
-export type DitherMode = "none" | "bayer2" | "bayer4" | "bayer8" | "blue" | "fs";
+export type { DitherMode };
 
 export interface RetroSettings {
   /** "long" keeps aspect with the long side = width; "exact" is width×height with `fit`. */
@@ -118,15 +117,6 @@ function grain(img: RGBAImage, amount: number, seed: number) {
   }
 }
 
-function thresholds(mode: DitherMode): { m: Float32Array | number[]; n: number } | null {
-  if (mode === "bayer2" || mode === "bayer4" || mode === "bayer8") {
-    const n = mode === "bayer2" ? 2 : mode === "bayer4" ? 4 : 8;
-    return { m: bayerMatrix(n).flat(), n };
-  }
-  if (mode === "blue") return { m: blueNoise(64), n: 64 };
-  return null;
-}
-
 export function convertRetro(src: RGBAImage, settings: Partial<RetroSettings> = {}): RetroResult {
   const s: RetroSettings = { ...RETRO_DEFAULTS, ...settings, bits: { ...RETRO_DEFAULTS.bits, ...settings.bits } };
   const [w, h] = outputSize(src.width, src.height, s);
@@ -143,65 +133,7 @@ export function convertRetro(src: RGBAImage, settings: Partial<RetroSettings> = 
   let palette: RGB[] = [];
   if (s.palette === "adaptive") palette = medianCut(img, Math.max(2, Math.min(256, s.colours | 0)), bitsOn ? snap : undefined);
   else if (s.palette === "locked" && s.locked.length) palette = bitsOn ? s.locked.map(snap) : s.locked.map((c) => [...c] as RGB);
-  const match = palette.length ? paletteMatcher(palette) : null;
-  const target = (r: number, g: number, b: number): RGB => (match ? match(r, g, b) : snap([r, g, b]));
-  const active = !!match || bitsOn;
-
-  if (active) {
-    const strength = s.ditherStrength / 100;
-    const mode = strength > 0 ? s.dither : "none";
-    // one quantisation step: how far apart neighbouring output colours roughly are
-    const minBits = Math.min(s.bits.r, s.bits.g, s.bits.b);
-    const spread = (match ? 255 / Math.max(1, Math.cbrt(palette.length) - 0.5) : 255 / ((1 << minBits) - 1)) * strength;
-    if (mode === "fs") {
-      const buf = new Float32Array(w * h * 3);
-      for (let i = 0, j = 0; i < d.length; i += 4, j += 3) {
-        buf[j] = d[i]!;
-        buf[j + 1] = d[i + 1]!;
-        buf[j + 2] = d[i + 2]!;
-      }
-      const push = (x: number, y: number, e: RGB, f: number) => {
-        if (y >= h) return;
-        if (!s.wrap && (x < 0 || x >= w)) return;
-        const xx = (x + w) % w;
-        const j = (y * w + xx) * 3;
-        if (d[(y * w + xx) * 4 + 3] === 0) return; // don't push error into transparent pixels
-        buf[j]! += e[0] * f;
-        buf[j + 1]! += e[1] * f;
-        buf[j + 2]! += e[2] * f;
-      };
-      for (let y = 0; y < h; y++)
-        for (let x = 0; x < w; x++) {
-          const i = (y * w + x) * 4;
-          if (d[i + 3] === 0) continue;
-          const j = (y * w + x) * 3;
-          const r = buf[j]!,
-            g = buf[j + 1]!,
-            b = buf[j + 2]!;
-          const c = target(Math.round(r), Math.round(g), Math.round(b));
-          d[i] = c[0];
-          d[i + 1] = c[1];
-          d[i + 2] = c[2];
-          const e: RGB = [(r - c[0]) * strength, (g - c[1]) * strength, (b - c[2]) * strength];
-          push(x + 1, y, e, 7 / 16);
-          push(x - 1, y + 1, e, 3 / 16);
-          push(x, y + 1, e, 5 / 16);
-          push(x + 1, y + 1, e, 1 / 16);
-        }
-    } else {
-      const t = thresholds(mode);
-      for (let y = 0; y < h; y++)
-        for (let x = 0; x < w; x++) {
-          const i = (y * w + x) * 4;
-          if (d[i + 3] === 0) continue;
-          const o = t ? (Number(t.m[(y % t.n) * t.n + (x % t.n)]) - 0.5) * spread : 0;
-          const c = target(Math.round(d[i]! + o), Math.round(d[i + 1]! + o), Math.round(d[i + 2]! + o));
-          d[i] = c[0];
-          d[i + 1] = c[1];
-          d[i + 2] = c[2];
-        }
-    }
-  }
+  if (palette.length || bitsOn) remapImage(img, { palette, bits: s.bits, dither: s.dither, strength: s.ditherStrength / 100, wrap: s.wrap });
   // fully transparent pixels carry no colour: zero them so PNGs compress and stay clean
   let transparent = false;
   for (let i = 0; i < d.length; i += 4) {
