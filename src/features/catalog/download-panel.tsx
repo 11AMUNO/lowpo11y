@@ -4,6 +4,7 @@ import { useState } from "react";
 import { buttonClasses } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/toast";
+import { trackDownload } from "@/lib/analytics/client";
 import { formatBytes } from "@/lib/format";
 
 export interface DownloadFile {
@@ -30,6 +31,7 @@ function DownloadLink({ file, className, children }: { file: DownloadFile; class
       className={className}
       onClick={(e) => {
         e.currentTarget.href = downloadHref(file.id);
+        trackDownload();
       }}
     >
       {children}

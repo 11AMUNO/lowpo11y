@@ -6,7 +6,7 @@
  * fills in defaults for settings a file doesn't have, and refuses unknown
  * steps or files from a newer version.
  */
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import { STEPS, STEP_TYPES, type FieldSpec, type StepType } from "./steps";
 
 export const PIPELINE_FORMAT = "lowpo11y-workshop";

@@ -1,4 +1,4 @@
-import { ZodError } from "zod";
+import { ZodError } from "@/lib/zod";
 import { env } from "@/lib/env";
 import { keyedHash } from "@/lib/auth/tokens";
 

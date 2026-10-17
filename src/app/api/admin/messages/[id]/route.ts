@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import { staffRequest } from "@/lib/admin-api";
 import { HttpError, readJson, route } from "@/lib/http";
 

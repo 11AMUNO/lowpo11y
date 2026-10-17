@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import { HttpError } from "@/lib/http";
 import { CONTENT_KINDS, type ContentKind } from "./repository";
 

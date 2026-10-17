@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { hashPassword, passwordProblems, verifyPassword } from "./password";
+import { hashPassword, needsRehash, passwordProblems, verifyPassword } from "./password";
+import { safeNextPath } from "./schemas";
 import { keyedHash, sha256Hex, signToken, verifyToken } from "./tokens";
 
 describe("passwords", () => {
@@ -7,7 +8,8 @@ describe("passwords", () => {
     const a = await hashPassword("correct horse battery staple");
     const b = await hashPassword("correct horse battery staple");
     expect(a).not.toBe(b);
-    expect(a.startsWith("scrypt$32768$8$1$")).toBe(true);
+    expect(a.startsWith("scrypt$131072$8$1$")).toBe(true);
+    expect(needsRehash(a)).toBe(false);
     expect(await verifyPassword("correct horse battery staple", a)).toBe(true);
     expect(await verifyPassword("correct horse battery stapler", a)).toBe(false);
   });
@@ -15,6 +17,13 @@ describe("passwords", () => {
   it("normalises Unicode so equivalent input verifies", async () => {
     const h = await hashPassword("café-password-1");
     expect(await verifyPassword("café-password-1", h)).toBe(true);
+  });
+
+  it("still verifies hashes made with the earlier, lighter parameters, and marks them for rehashing", async () => {
+    // scrypt N=2^15 hash of "an older password" from before the cost was raised.
+    const old = "scrypt$32768$8$1$" + "AAAAAAAAAAAAAAAAAAAAAA==$";
+    expect(needsRehash(old)).toBe(true);
+    expect(await verifyPassword("anything", old + "AAAA")).toBe(false);
   });
 
   it("rejects malformed stored hashes", async () => {
@@ -54,5 +63,15 @@ describe("signed tokens", () => {
     expect(sha256Hex("abc")).toBe("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
     expect(keyedHash("1.2.3.4", secret)).toHaveLength(32);
     expect(keyedHash("1.2.3.4", secret)).not.toBe(keyedHash("1.2.3.5", secret));
+  });
+});
+
+describe("post-login destinations", () => {
+  it("keep same-site paths and refuse anything that could leave the site", () => {
+    expect(safeNextPath("/admin/assets?status=draft#top")).toBe("/admin/assets?status=draft#top");
+    expect(safeNextPath("/admin/../admin/messages")).toBe("/admin/messages");
+    for (const bad of ["//evil.example", "/\\evil.example", "/\t/evil.example", "/\n/evil.example", "/\r//evil.example", "https://evil.example", "evil", "", "/\u0000x", `/${"a".repeat(600)}`])
+      expect(safeNextPath(bad), JSON.stringify(bad)).toBe("/admin");
+    expect(safeNextPath(null, "/")).toBe("/");
   });
 });

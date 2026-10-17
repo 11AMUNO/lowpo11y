@@ -6,6 +6,7 @@ import { SegmentedControl } from "@/components/ui/controls";
 import { Progress } from "@/components/ui/feedback";
 import { cn } from "@/lib/cn";
 import { formatCount } from "@/lib/format";
+import { track } from "@/lib/analytics/client";
 
 type Shading = "shaded" | "unlit" | "wire";
 
@@ -197,10 +198,12 @@ export function ModelViewer({ src, poster, title, className }: { src: string; po
       };
       setStats({ triangles, vertices, meshes, textures: textures.size, size: [size.x, size.y, size.z] });
       setState("ready");
+      track("preview", "asset:ok");
     })().catch((e: unknown) => {
       if (cancelled) return;
       setError(e instanceof Error && e.message ? e.message : "The 3D preview couldn't be loaded.");
       setState("error");
+      track("preview", "asset:error");
     });
     return () => {
       cancelled = true;

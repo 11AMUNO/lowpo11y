@@ -5,7 +5,7 @@
  * the same storeAssetFile/derive pipeline as single uploads. Imports never
  * publish and never invent licence terms: unknown rights stay unset.
  */
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import type { Queryable, Tx } from "@/lib/db";
 import { audit } from "@/lib/audit";
 import type { AssetStorage } from "@/lib/storage";

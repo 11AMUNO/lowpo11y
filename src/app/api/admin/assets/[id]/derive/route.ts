@@ -1,6 +1,6 @@
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import { generateDerivatives } from "@/lib/assets/derive";
-import { staffRequest } from "@/lib/admin-api";
+import { assertAssetEditable, staffRequest } from "@/lib/admin-api";
 import { getStorage } from "@/lib/storage";
 import { HttpError, readJson, route } from "@/lib/http";
 
@@ -14,6 +14,7 @@ export const POST = route(async (request: Request, ctx: RouteContext<"/api/admin
   const s = await staffRequest(request);
   const { id } = await ctx.params;
   if (!z.uuid().safeParse(id).success) throw new HttpError(404, "Asset not found.", "not_found");
+  await assertAssetEditable(s, id);
   const body = bodySchema.parse(await readJson(request).catch(() => ({})));
   try {
     const result = await generateDerivatives(s.tx, getStorage(), id, body);

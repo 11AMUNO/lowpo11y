@@ -7,6 +7,7 @@ import { Container, PageHeader } from "@/components/site/page-header";
 import { PUBLIC, withDb } from "@/lib/db";
 import { catalogQuery, parseCatalogParams, searchCatalog, type CatalogParams, type CatalogResult, type FacetOption } from "@/lib/assets/catalog";
 import { ASSET_TYPE_LABEL, type AssetType } from "@/lib/assets/schemas";
+import { SearchBeacon } from "./search-beacon";
 import { cn } from "@/lib/cn";
 import { formatCount } from "@/lib/format";
 import { AssetCard, AssetRow } from "./asset-card";
@@ -117,6 +118,7 @@ export async function CatalogPage({ cfg, searchParams }: { cfg: CatalogPageConfi
   return (
     <Container wide>
       <PageHeader title={cfg.title} description={cfg.description} breadcrumbs={[{ label: "Home", href: "/" }, { label: cfg.title }]} telemetry={telemetry} />
+      {p.q && page === 1 ? <SearchBeacon kind={cfg.basePath === "/textures" ? "textures" : "assets"} q={p.q} /> : null}
 
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-b border-rule-strong py-4">
         <form action={cfg.basePath} method="get" role="search" className="flex min-w-[min(100%,22rem)] flex-1 gap-2">

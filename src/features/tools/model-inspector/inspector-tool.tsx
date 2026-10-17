@@ -13,6 +13,7 @@ import { isPowerOfTwo } from "@/lib/processing/image";
 import { saveBlob } from "../shared/files";
 import { externalUris, pickModel, resolveUri, UNSUPPORTED_EXTENSION_HELP } from "./files";
 import { DEFAULT_DISPLAY, type Display, type InspectInfo, type InspectorView, type ModelSource } from "./types";
+import { track } from "@/lib/analytics/client";
 
 const MAX_BYTES = 256 * 1024 * 1024;
 const SAMPLES = [
@@ -124,8 +125,10 @@ export function InspectorTool() {
       setLoaded({ name: model.name, bytes: model.size, stats, info });
       setLoads((n) => n + 1);
       if (info.animations.length) view.current.select(0);
+      track("preview", "inspector:ok");
     } catch (e) {
       view.current?.unload();
+      track("preview", "inspector:error");
       setError(e instanceof Error ? e.message : "This model couldn't be opened.");
     } finally {
       setBusy(false);

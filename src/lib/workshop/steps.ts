@@ -5,7 +5,7 @@
  * Workshop and the tools can't drift apart. Steps never modify their input:
  * cached intermediate images stay valid.
  */
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import { cropImage, trimTransparent } from "@/lib/processing/atlas";
 import { bleed } from "@/lib/processing/decal";
 import { cloneImage, createImage, hexToRgb, isPowerOfTwo, type RGB, type RGBAImage } from "@/lib/processing/image";

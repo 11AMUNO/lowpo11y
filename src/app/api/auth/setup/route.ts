@@ -5,7 +5,7 @@ import { hitRateLimit } from "@/lib/auth/rate-limit";
 import { setupSchema } from "@/lib/auth/schemas";
 import { sessionCookieOptions } from "@/lib/auth/server";
 import { setupMode } from "@/lib/auth/setup";
-import { adminCount, AuthInputError, createSession, createUser, SESSION_COOKIE } from "@/lib/auth/sessions";
+import { AuthInputError, createSession, createUser, SESSION_COOKIE, setupOpen } from "@/lib/auth/sessions";
 import { SERVICE, withDb } from "@/lib/db";
 import { env } from "@/lib/env";
 import { assertSameOrigin, badRequest, clientKey, forbidden, HttpError, readJson, route } from "@/lib/http";
@@ -18,7 +18,7 @@ function tokenMatches(given: string | undefined, expected: string) {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-/** Creates the first admin account. Refuses once any admin exists. */
+/** Creates the first admin account. Refuses once any account exists. */
 export const POST = route(async (request: Request) => {
   assertSameOrigin(request);
   const body = setupSchema.parse(await readJson(request));
@@ -30,7 +30,7 @@ export const POST = route(async (request: Request) => {
   if (mode === "token" && !tokenMatches(body.token, env().SETUP_TOKEN!)) throw forbidden("The setup token is incorrect.");
 
   const result = await withDb(SERVICE, async (q) => {
-    if ((await adminCount(q)) > 0) throw forbidden("Setup is already complete. Sign in instead.");
+    if (!(await setupOpen(q, true))) throw forbidden("Setup is already complete. Sign in instead.");
     try {
       const user = await createUser(q, { email: body.email, password: body.password, displayName: body.displayName, role: "admin" });
       const session = await createSession(q, user.id, request.headers.get("user-agent"));

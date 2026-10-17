@@ -52,7 +52,8 @@ export default async function MessagesPage({ searchParams }: PageProps<"/admin/m
                   <a href={`mailto:${m.email}?subject=${encodeURIComponent(`Re: ${m.subject}`)}`} className="text-bright underline underline-offset-2">
                     {m.email}
                   </a>
-                  {m.page_url ? (
+                  {/* Links only to paths on this site (older rows were checked less strictly). */}
+                  {m.page_url && /^\/(?!\/)/.test(m.page_url) ? (
                     <>
                       {" "}
                       //{" "}

@@ -2,7 +2,7 @@
  * Admin-side queries. Run under the signed-in staff member's RLS context, so
  * editors and admins see exactly what their role allows.
  */
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import type { Queryable } from "@/lib/db";
 import { ASSET_TYPES, type AssetType } from "./schemas";
 

@@ -141,6 +141,29 @@ describe.each(TEST_DRIVERS)("schema and row-level security (%s)", (driver) => {
       expect(touched).toEqual([]);
     });
 
+    it("cannot change the files, tags or pack membership of published items, only of drafts", async () => {
+      const files = (id: string) => asRole(t.db, ctx(), (q) => q.query<{ id: string }>("update asset_files set sort_order = 7 where asset_id = $1 returning id", [id]));
+      expect(await files(publishedId)).toEqual([]);
+      expect(await asRole(t.db, ctx(), (q) => q.query("delete from asset_files where asset_id = $1 returning id", [publishedId]))).toEqual([]);
+      await expectDenied(
+        asRole(t.db, ctx(), (q) =>
+          q.query(
+            "insert into asset_files (asset_id, purpose, storage_key, original_filename, format, mime, size_bytes, sha256) values ($1, 'source', 'assets/x/source/2.bin', 'x.bin', 'bin', 'application/octet-stream', 1, $2)",
+            [publishedId, "b".repeat(64)],
+          ),
+        ),
+      );
+      expect(await files(draftId)).toHaveLength(1);
+      const [tag] = await t.db.query<{ id: string }>("insert into tags (slug, name) values ('rusty', 'Rusty') returning id");
+      await expectDenied(asRole(t.db, ctx(), (q) => q.query("insert into asset_tags (asset_id, tag_id) values ($1, $2)", [publishedId, tag!.id])));
+      await asRole(t.db, ctx(), (q) => q.query("insert into asset_tags (asset_id, tag_id) values ($1, $2)", [draftId, tag!.id]));
+      const [pack] = await t.db.query<{ id: string }>("insert into collections (slug, title, status, published_at) values ('live-pack', 'Live pack', 'published', now()) returning id");
+      await expectDenied(asRole(t.db, ctx(), (q) => q.query("insert into collection_assets (collection_id, asset_id) values ($1, $2)", [pack!.id, publishedId])));
+      // Admins still can.
+      await asRole(t.db, { role: "admin", userId: adminId }, (q) => q.query("insert into collection_assets (collection_id, asset_id) values ($1, $2)", [pack!.id, publishedId]));
+      expect(await asRole(t.db, { role: "admin", userId: adminId }, (q) => q.query("update asset_files set sort_order = 0 where asset_id = $1 returning id", [publishedId]))).toHaveLength(2);
+    });
+
     it("can write audit entries only as themselves", async () => {
       await asRole(t.db, ctx(), (q) => q.query("insert into audit_log (actor_id, action, target_type) values ($1, 'test', 'asset')", [editorId]));
       await expectDenied(asRole(t.db, ctx(), (q) => q.query("insert into audit_log (actor_id, action, target_type) values ($1, 'forged', 'asset')", [adminId])));

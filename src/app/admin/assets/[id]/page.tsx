@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Panel } from "@/components/ui/panel";
 import { AuditList } from "@/features/admin/audit-list";

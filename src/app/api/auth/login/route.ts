@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { audit } from "@/lib/audit";
-import { hitRateLimit } from "@/lib/auth/rate-limit";
+import { checkLogin, recordLoginFailure } from "@/lib/auth/login-limits";
 import { loginSchema, safeNextPath } from "@/lib/auth/schemas";
 import { sessionCookieOptions } from "@/lib/auth/server";
 import { authenticate, createSession, SESSION_COOKIE } from "@/lib/auth/sessions";
@@ -16,17 +16,16 @@ export const POST = route(async (request: Request) => {
   const ip = clientKey(request);
   const emailKey = sha256Hex(body.email.toLowerCase()).slice(0, 24);
 
-  const [byIp, byEmail] = await withDb(SERVICE, async (q) => [
-    await hitRateLimit(q, `login:ip:${ip}`, 10, 15 * 60),
-    await hitRateLimit(q, `login:email:${emailKey}`, 20, 60 * 60),
-  ]);
-  const limited = !byIp.ok ? byIp : !byEmail.ok ? byEmail : null;
+  const limited = await withDb(SERVICE, (q) => checkLogin(q, ip, emailKey));
   if (limited) {
     throw new HttpError(429, `Too many sign-in attempts. Try again in ${Math.ceil(limited.retryAfterSeconds / 60)} minutes.`, "rate_limited");
   }
 
   const user = await withDb(SERVICE, (q) => authenticate(q, body.email, body.password));
-  if (!user) throw new HttpError(401, "Email or password is incorrect.", "invalid_credentials");
+  if (!user) {
+    await withDb(SERVICE, (q) => recordLoginFailure(q, ip, emailKey));
+    throw new HttpError(401, "Email or password is incorrect.", "invalid_credentials");
+  }
 
   const session = await withDb(SERVICE, async (q) => {
     const s = await createSession(q, user.id, request.headers.get("user-agent"));

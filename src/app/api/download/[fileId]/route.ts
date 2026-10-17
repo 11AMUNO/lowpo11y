@@ -1,5 +1,5 @@
-import { z } from "zod";
-import { DownloadError, recordDownload, resolveDownload } from "@/lib/assets/downloads";
+import { z } from "@/lib/zod";
+import { DownloadError, recordDownload, resolveDownload, shouldCountDownload } from "@/lib/assets/downloads";
 import { PUBLIC, SERVICE, withDb } from "@/lib/db";
 import { HttpError, route } from "@/lib/http";
 import { getStorage } from "@/lib/storage";
@@ -18,7 +18,9 @@ export const GET = route(async (request: Request, ctx: RouteContext<"/api/downlo
     throw e;
   }
   const eventId = new URL(request.url).searchParams.get("e");
-  await withDb(SERVICE, (q) => recordDownload(q, d, eventId));
+  await withDb(SERVICE, async (q) => {
+    if (await shouldCountDownload(q, request)) await recordDownload(q, d, eventId);
+  });
   const target = getStorage().publicUrl(d.publicKey);
   return new Response(null, {
     status: 302,

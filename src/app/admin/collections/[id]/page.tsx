@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { CollectionEditor } from "@/features/admin/collection-editor/collection-editor";
 import { StatusBadge } from "@/features/admin/status-badge";

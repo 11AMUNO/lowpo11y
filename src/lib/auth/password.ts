@@ -5,11 +5,12 @@ import { randomBytes, scrypt as scryptCb, timingSafeEqual, type ScryptOptions } 
  * Format: scrypt$N$r$p$saltB64$hashB64 — parameters are stored so they can be
  * raised later without invalidating existing hashes.
  */
-const N = 1 << 15;
+// N = 2^17, r = 8 (128 MiB of work memory): OWASP's minimum for scrypt.
+const N = 1 << 17;
 const R = 8;
 const P = 1;
 const KEYLEN = 64;
-const MAXMEM = 128 * 1024 * 1024;
+const MAXMEM = 256 * 1024 * 1024;
 
 export const PASSWORD_MIN_LENGTH = 12;
 
@@ -37,6 +38,12 @@ export async function verifyPassword(password: string, stored: string): Promise<
     maxmem: MAXMEM,
   });
   return key.length === expected.length && timingSafeEqual(key, expected);
+}
+
+/** Whether a stored hash uses weaker parameters than new hashes (rehash it at the next successful sign-in). */
+export function needsRehash(stored: string): boolean {
+  const [scheme, n, r, p] = stored.split("$");
+  return scheme !== "scrypt" || Number(n) < N || Number(r) < R || Number(p) < P;
 }
 
 /** A hash of a random password, used to keep login timing constant when the email is unknown. */

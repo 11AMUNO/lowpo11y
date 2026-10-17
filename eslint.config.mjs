@@ -17,7 +17,13 @@ export default defineConfig([
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
       ],
       "@typescript-eslint/consistent-type-imports": ["error", { fixStyle: "inline-type-imports" }],
+      // zod comes from @/lib/zod, which turns off its eval probe (blocked by the CSP).
+      "no-restricted-imports": ["error", { paths: [{ name: "zod", message: 'Import from "@/lib/zod" instead (it configures zod for the Content Security Policy).' }] }],
     },
+  },
+  {
+    files: ["src/lib/zod.ts"],
+    rules: { "no-restricted-imports": "off" },
   },
   globalIgnores([
     ".next/**",

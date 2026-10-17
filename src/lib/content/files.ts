@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import type { LicenceInfo } from "@/lib/assets/bundle";
 import { UPLOAD_TTL_SECONDS, UploadError, type UploadSessionRow } from "@/lib/assets/uploads";
 import type { Tx } from "@/lib/db";
@@ -7,6 +7,7 @@ import { IMMUTABLE_CACHE, keys, safeFilename, type AssetStorage, type UploadTarg
 import { looksExecutable } from "@/lib/validation/file-types";
 import { unzipSync } from "fflate";
 import { buildShaderBundle } from "./bundles";
+import { zipEntries, ZipReadError, type ZipEntry } from "./zip-entries";
 import { setContentStatus, type ContentRow } from "./repository";
 
 /**
@@ -29,25 +30,40 @@ export const starterUploadSchema = z.object({
 // Project archives may contain source code (.js, .gd, .cs…) but never binaries or OS scripts.
 const BLOCKED_IN_PROJECTS = /\.(exe|dll|so|dylib|bat|cmd|com|msi|scr|ps1|vbs|jar|apk|app|sh|bash|zsh|command|cpl|lnk|reg|hta|wsf)$/i;
 
-export function inspectProjectZip(b: Uint8Array): string[] {
-  const problems: string[] = [];
-  const names: string[] = [];
+/** Projects unpack to at most this much, so downloads can't be ZIP bombs. */
+export const MAX_PROJECT_UNPACKED_BYTES = 512 * 1024 * 1024;
+
+/**
+ * Checks a starter project ZIP: safe relative paths, no symbolic links, a
+ * bounded unpacked size, and no binaries or OS scripts, by name or by
+ * content (an executable without an extension is still an executable).
+ */
+export function inspectProjectZip(b: Uint8Array, maxUnpacked = MAX_PROJECT_UNPACKED_BYTES): string[] {
+  let entries: ZipEntry[];
   try {
-    unzipSync(b, {
-      filter: (f) => {
-        names.push(f.name);
-        return false;
-      },
-    });
-  } catch {
-    return ["The file isn't a readable ZIP archive."];
+    entries = zipEntries(b);
+  } catch (e) {
+    return [e instanceof ZipReadError ? e.message : "The file isn't a readable ZIP archive."];
   }
-  if (!names.length) problems.push("The ZIP is empty.");
-  if (names.length > 20_000) problems.push(`The ZIP has ${names.length} entries; the limit is 20,000.`);
-  for (const n of names) {
+  const problems: string[] = [];
+  if (!entries.length) problems.push("The ZIP is empty.");
+  if (entries.length > 20_000) problems.push(`The ZIP has ${entries.length} entries; the limit is 20,000.`);
+  for (const e of entries) {
+    const n = e.name;
     if (n.startsWith("/") || n.includes("..") || /^[a-z]:/i.test(n) || n.includes("\\")) problems.push(`Unsafe path in ZIP: ${n}`);
+    if (e.symlink) problems.push(`Symbolic links aren't allowed in projects: ${n}`);
     if (BLOCKED_IN_PROJECTS.test(n)) problems.push(`Binaries and shell scripts aren't allowed in projects: ${n}`);
   }
+  const unpacked = entries.reduce((t, e) => t + e.size, 0);
+  if (unpacked > maxUnpacked) problems.push(`The project unpacks to ${Math.round(unpacked / 1048576)} MB; the limit is ${Math.round(maxUnpacked / 1048576)} MB.`);
+  if (problems.length) return problems.slice(0, 20);
+  let files: Record<string, Uint8Array>;
+  try {
+    files = unzipSync(b);
+  } catch {
+    return ["The ZIP couldn't be unpacked; it may be damaged or use an unsupported compression method."];
+  }
+  for (const [n, data] of Object.entries(files)) if (!n.endsWith("/") && looksExecutable(data)) problems.push(`Binaries aren't allowed in projects: ${n} is an executable.`);
   return problems.slice(0, 20);
 }
 

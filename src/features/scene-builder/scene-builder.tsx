@@ -38,6 +38,7 @@ import { checkModelFile } from "@/lib/scene/model-check";
 import { emptyScene, parseScene, SceneFileError, serialiseScene, type AssetRef, type PrimitiveShape, type SceneDoc, type Transform, type Vec3 } from "@/lib/scene/schema";
 import { sha256Hex } from "@/lib/workshop/hash";
 import type { LibraryTexture } from "@/lib/workshop/library";
+import { track } from "@/lib/analytics/client";
 import { isImage, readDrop, useWindowDrop } from "../tools/shared/drop";
 import { saveBlob } from "../tools/shared/files";
 import { AssetPalette, DRAG_TYPE, type PaletteDrag } from "./asset-palette";
@@ -217,6 +218,8 @@ export function SceneBuilder() {
       stats: setStats,
       asset: (id, state) => {
         setAssets((m) => new Map(m).set(id, state));
+        const kind = histRef.current.present.assets.find((x) => x.id === id);
+        if (kind?.kind === "model" && state.status !== "loading") track("preview", `scene-${kind.source}:${state.status === "ready" ? "ok" : "error"}`);
         if (state.status === "failed" && !reported.current.has(id)) {
           reported.current.add(id);
           const a = histRef.current.present.assets.find((x) => x.id === id);

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import type { Queryable, Tx } from "@/lib/db";
 import { keys, type AssetStorage, type UploadTarget } from "@/lib/storage";
 import { ALLOWED_FORMATS, extensionOf } from "@/lib/validation/file-types";

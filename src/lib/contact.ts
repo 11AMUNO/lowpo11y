@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import type { Queryable } from "@/lib/db";
 
 export const CONTACT_KINDS = ["general", "takedown", "correction", "suggestion"] as const;
@@ -14,7 +14,8 @@ export const contactSchema = z.object({
     .string()
     .trim()
     .max(300)
-    .regex(/^\/[\w\-./?=&%]*$/, "Use a path on this site, e.g. /assets/wooden-crate.")
+    // One leading slash only: "//host/..." would be a link to another site.
+    .regex(/^\/(?!\/)[\w\-./?=&%]*$/, "Use a path on this site, e.g. /assets/wooden-crate.")
     .optional()
     .or(z.literal("").transform(() => undefined)),
   /** Honeypot: people never see or fill this field. */

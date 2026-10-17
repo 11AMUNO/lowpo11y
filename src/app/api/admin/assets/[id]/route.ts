@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import { unpublishAsset } from "@/lib/assets/publish";
 import { AssetInputError, getAssetById, updateAsset } from "@/lib/assets/repository";
 import { assetPatchSchema } from "@/lib/assets/schemas";

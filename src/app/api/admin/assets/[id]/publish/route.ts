@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import { PublishError, publishAsset, unpublishAsset } from "@/lib/assets/publish";
 import { assetPath } from "@/lib/assets/schemas";
 import { staffRequest } from "@/lib/admin-api";

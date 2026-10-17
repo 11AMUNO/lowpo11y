@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { z } from "zod";
+import { z } from "@/lib/zod";
 
 /**
  * Server-side configuration, validated once. Nothing here is exposed to the
@@ -28,6 +28,12 @@ const schema = z
     R2_PUBLIC_BASE_URL: z.url().optional(),
     R2_ENDPOINT: z.url().optional(),
     MAX_UPLOAD_BYTES: z.coerce.number().int().positive().default(512 * 1024 * 1024),
+    /** Bearer token the daily maintenance job must send (Vercel Cron sends it automatically). */
+    CRON_SECRET: z.string().min(16).optional(),
+    /** Storage budget in GB; the daily job warns at 80% and when it is exceeded. */
+    STORAGE_BUDGET_GB: z.coerce.number().positive().optional(),
+    /** Where warnings go: a Slack- or Discord-compatible incoming webhook. */
+    ALERT_WEBHOOK_URL: z.url().optional(),
   })
   .superRefine((env, ctx) => {
     if (env.STORAGE_PROVIDER === "r2") {

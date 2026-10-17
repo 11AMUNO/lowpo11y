@@ -3,6 +3,8 @@
  * plus an optional client-generated event id to ignore double clicks. No IP
  * addresses or identifiers are stored.
  */
+import { hitRateLimit } from "@/lib/auth/rate-limit";
+import { clientKey } from "@/lib/http";
 import type { Queryable } from "@/lib/db";
 import { sha256Hex } from "@/lib/auth/tokens";
 
@@ -64,4 +66,9 @@ export async function recordDownload(q: Queryable, d: ResolvedDownload, eventId?
 
 export async function pruneDownloadDedupe(q: Queryable, olderThanHours = 24): Promise<void> {
   await q.query("delete from download_dedupe where created_at < now() - ($1 || ' hours')::interval", [String(olderThanHours)]);
+}
+
+/** Scripted bursts still download but stop being counted, so they can't push files up the popular lists (300 an hour per address). */
+export async function shouldCountDownload(q: Queryable, request: Request): Promise<boolean> {
+  return (await hitRateLimit(q, `download:${clientKey(request)}`, 300, 60 * 60)).ok;
 }

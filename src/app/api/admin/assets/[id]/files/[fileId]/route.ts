@@ -1,6 +1,6 @@
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import { AssetInputError, recomputeAssetFacets, setFileFlags, softDeleteFile } from "@/lib/assets/repository";
-import { staffRequest } from "@/lib/admin-api";
+import { assertAssetEditable, staffRequest } from "@/lib/admin-api";
 import { getStorage } from "@/lib/storage";
 import { badRequest, HttpError, readJson, route } from "@/lib/http";
 
@@ -18,6 +18,7 @@ const flagsSchema = z.object({ isPrimary: z.literal(true).optional(), published:
 export const PATCH = route(async (request: Request, ctx: RouteContext<"/api/admin/assets/[id]/files/[fileId]">) => {
   const s = await staffRequest(request);
   const { id, fileId } = await ids(ctx);
+  await assertAssetEditable(s, id);
   const flags = flagsSchema.parse(await readJson(request));
   try {
     await s.db(async (q) => {
@@ -36,6 +37,7 @@ export const PATCH = route(async (request: Request, ctx: RouteContext<"/api/admi
 export const DELETE = route(async (request: Request, ctx: RouteContext<"/api/admin/assets/[id]/files/[fileId]">) => {
   const s = await staffRequest(request);
   const { id, fileId } = await ids(ctx);
+  await assertAssetEditable(s, id);
   const file = await s.db(async (q) => {
     const f = await softDeleteFile(q, id, fileId);
     if (f) await recomputeAssetFacets(q, id);

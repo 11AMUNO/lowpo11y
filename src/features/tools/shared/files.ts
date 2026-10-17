@@ -1,5 +1,6 @@
 "use client";
 
+import { trackExport } from "@/lib/analytics/client";
 import type { RGBAImage } from "@/lib/processing/image";
 
 /** Saves a blob through a temporary link (the browser shows its normal download UI). */
@@ -11,6 +12,7 @@ export function saveBlob(blob: Blob, filename: string) {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  trackExport(filename);
 }
 
 /** Decodes an image file to straight-alpha RGBA (worker or main thread). Throws on oversize. */

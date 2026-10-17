@@ -7,7 +7,7 @@
  * everything, repairs what it safely can (duplicate ids, orphans, parent
  * loops, missing assets) and says what it changed.
  */
-import { z } from "zod";
+import { z } from "@/lib/zod";
 
 export const SCENE_FORMAT = "lowpo11y-scene";
 export const SCENE_VERSION = 1;

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import { applyDefaults, importDefaultsSchema, parseManifest, planFromPaths, validatePlan, type ImportEntry } from "@/lib/assets/import";
 import { ASSET_TYPES } from "@/lib/assets/schemas";
 import { staffRequest } from "@/lib/admin-api";

@@ -1,7 +1,7 @@
 import { HttpError, route } from "@/lib/http";
 import { contentDisposition, getStorage, IMMUTABLE_CACHE } from "@/lib/storage";
 import { assertSafeKey } from "@/lib/storage/keys";
-import { LocalFilesystemStorage } from "@/lib/storage/local";
+import { type LocalFilesystemStorage } from "@/lib/storage/local";
 
 export const dynamic = "force-dynamic";
 
@@ -20,12 +20,15 @@ export const GET = route(async (request: Request, ctx: RouteContext<"/files/[...
   } catch {
     throw new HttpError(404, "Not found.", "not_found");
   }
-  const storage = getStorage();
-  if (!(storage instanceof LocalFilesystemStorage)) {
-    const target = storage.publicUrl(key);
+  // By provider, not instanceof: route bundles can hold separate copies of the class,
+  // and the storage instance is shared through globalThis.
+  const s = getStorage();
+  if (s.provider !== "local") {
+    const target = s.publicUrl(key);
     if (target.startsWith("http")) return Response.redirect(target, 308);
-    return Response.redirect(await storage.signedGetUrl("public", key, { expiresInSeconds: 300 }), 302);
+    return Response.redirect(await s.signedGetUrl("public", key, { expiresInSeconds: 300 }), 302);
   }
+  const storage = s as LocalFilesystemStorage;
   const head = await storage.head("public", key).catch(() => null);
   if (!head) throw new HttpError(404, "Not found.", "not_found");
   if (request.headers.get("if-none-match") === head.etag) return new Response(null, { status: 304, headers: { ETag: head.etag! } });

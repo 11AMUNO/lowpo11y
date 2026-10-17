@@ -6,7 +6,7 @@ import { Container } from "@/components/site/page-header";
 import { LoginForm } from "@/features/admin/login-form";
 import { getCurrentUser } from "@/lib/auth/server";
 import { safeNextPath } from "@/lib/auth/schemas";
-import { adminCount, isStaff } from "@/lib/auth/sessions";
+import { isStaff, setupOpen } from "@/lib/auth/sessions";
 import { SERVICE, withDb } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +17,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/auth/login
   const next = safeNextPath(typeof sp.next === "string" ? sp.next : undefined);
   const user = await getCurrentUser();
   if (isStaff(user) && sp.error !== "forbidden") redirect(next);
-  const admins = await withDb(SERVICE, (q) => adminCount(q));
+  const firstRun = await withDb(SERVICE, (q) => setupOpen(q));
   const error = sp.error === "forbidden" ? "That account can't open the admin area." : undefined;
 
   return (
@@ -25,7 +25,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/auth/login
       <h1 className="type-display">Sign in</h1>
       <p className="mt-2 font-ocr text-[13px] tracking-[0.08em] text-muted uppercase">&gt; Staff access // admin and editors</p>
       <Panel title="Credentials" className="mt-6">
-        {admins === 0 ? (
+        {firstRun ? (
           <p className="text-muted">
             No admin account exists yet. <Link href="/auth/setup" className="text-bright underline">Create the first admin</Link>.
           </p>

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import { CollectionPublishError, publishCollection, unpublishCollection } from "@/lib/assets/collections";
 import { staffRequest } from "@/lib/admin-api";
 import { getStorage } from "@/lib/storage";

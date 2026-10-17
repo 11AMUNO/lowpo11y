@@ -5,7 +5,7 @@
  * columns explicitly so private review notes and storage keys never reach a
  * page.
  */
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import type { Queryable } from "@/lib/db";
 import { DIFFICULTIES, ENGINES, TOPICS } from "./schemas";
 

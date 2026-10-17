@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import { contextFor, requireStaffApi } from "@/lib/auth/server";
 import { withDb } from "@/lib/db";
 import { HttpError, route } from "@/lib/http";

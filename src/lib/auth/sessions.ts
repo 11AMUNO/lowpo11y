@@ -1,9 +1,11 @@
 import type { Queryable } from "@/lib/db";
-import { dummyHash, hashPassword, passwordProblems, verifyPassword } from "./password";
+import { dummyHash, hashPassword, needsRehash, passwordProblems, verifyPassword } from "./password";
 import { randomToken, sha256Hex } from "./tokens";
 
 export const SESSION_COOKIE = "lp_session";
 export const SESSION_TTL_MS = 14 * 24 * 60 * 60 * 1000;
+/** However active a session is, it ends this long after sign-in. */
+export const SESSION_MAX_AGE_MS = 60 * 24 * 60 * 60 * 1000;
 const EXTEND_WHEN_REMAINING_MS = 7 * 24 * 60 * 60 * 1000;
 
 export type Role = "user" | "editor" | "admin";
@@ -61,6 +63,7 @@ export async function authenticate(q: Queryable, email: string, password: string
   const ok = await verifyPassword(password, row?.password_hash ?? (await dummyHash()));
   if (!row || !ok || row.disabled_at) return null;
   await q.query("update users set last_login_at = now() where id = $1", [row.id]);
+  if (needsRehash(row.password_hash)) await q.query("update users set password_hash = $2 where id = $1", [row.id, await hashPassword(password)]);
   return toUser(row);
 }
 
@@ -86,21 +89,22 @@ export interface ResolvedSession {
 
 export async function resolveSession(q: Queryable, token: string | undefined, now = new Date()): Promise<ResolvedSession | null> {
   if (!token || token.length < 20 || token.length > 100) return null;
-  const [row] = await q.query<UserRow & { session_id: string; expires_at: Date }>(
-    `select s.id as session_id, s.expires_at, u.id, u.email, u.display_name, u.role, u.password_hash, u.disabled_at
+  const [row] = await q.query<UserRow & { session_id: string; expires_at: Date; created_at: Date }>(
+    `select s.id as session_id, s.expires_at, s.created_at, u.id, u.email, u.display_name, u.role, u.password_hash, u.disabled_at
        from user_sessions s join users u on u.id = s.user_id
       where s.token_hash = $1`,
     [sha256Hex(token)],
   );
   if (!row) return null;
-  if (row.disabled_at || new Date(row.expires_at).getTime() <= now.getTime()) {
+  const endsAt = new Date(row.created_at).getTime() + SESSION_MAX_AGE_MS;
+  if (row.disabled_at || new Date(row.expires_at).getTime() <= now.getTime() || endsAt <= now.getTime()) {
     await q.query("delete from user_sessions where id = $1", [row.session_id]);
     return null;
   }
   let expiresAt = new Date(row.expires_at);
   let extended = false;
-  if (expiresAt.getTime() - now.getTime() < EXTEND_WHEN_REMAINING_MS) {
-    expiresAt = new Date(now.getTime() + SESSION_TTL_MS);
+  if (expiresAt.getTime() - now.getTime() < EXTEND_WHEN_REMAINING_MS && expiresAt.getTime() < endsAt) {
+    expiresAt = new Date(Math.min(now.getTime() + SESSION_TTL_MS, endsAt));
     extended = true;
     await q.query("update user_sessions set expires_at = $2, last_seen_at = now() where id = $1", [row.session_id, expiresAt]);
   }
@@ -122,9 +126,15 @@ export async function setPassword(q: Queryable, userId: string, password: string
   await revokeAllSessions(q, userId);
 }
 
-export async function adminCount(q: Queryable): Promise<number> {
-  const [row] = await q.query<{ n: number }>("select count(*)::int as n from users where role = 'admin' and disabled_at is null");
-  return row?.n ?? 0;
+/**
+ * First-time setup is open only while no account exists at all: disabling
+ * the only admin doesn't reopen it. Takes a transaction-scoped lock so two
+ * simultaneous setup requests can't both create an admin.
+ */
+export async function setupOpen(q: Queryable, lock = false): Promise<boolean> {
+  if (lock) await q.query("select pg_advisory_xact_lock(hashtext('lowpo11y:first-admin-setup'))");
+  const [row] = await q.query<{ any: boolean }>("select exists (select 1 from users) as any");
+  return !row?.any;
 }
 
 export function isStaff(user: SessionUser | null | undefined): user is SessionUser {

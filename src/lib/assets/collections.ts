@@ -4,7 +4,7 @@
  */
 import { randomUUID } from "node:crypto";
 import { zipSync, type Zippable } from "fflate";
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import type { Queryable, Tx } from "@/lib/db";
 import { absoluteUrl } from "@/lib/site";
 import { IMMUTABLE_CACHE, keys, type AssetStorage } from "@/lib/storage";

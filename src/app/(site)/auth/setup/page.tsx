@@ -5,21 +5,21 @@ import { Notice } from "@/components/ui/feedback";
 import { Container } from "@/components/site/page-header";
 import { SetupForm } from "@/features/admin/setup-form";
 import { setupMode } from "@/lib/auth/setup";
-import { adminCount } from "@/lib/auth/sessions";
+import { setupOpen } from "@/lib/auth/sessions";
 import { SERVICE, withDb } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "First-time setup", robots: { index: false } };
 
 export default async function SetupPage() {
-  const admins = await withDb(SERVICE, (q) => adminCount(q));
+  const open = await withDb(SERVICE, (q) => setupOpen(q));
   const mode = setupMode();
   return (
     <Container className="max-w-md py-16">
       <h1 className="type-display">First-time setup</h1>
       <p className="mt-2 font-ocr text-[13px] tracking-[0.08em] text-muted uppercase">&gt; Create the owner account</p>
       <Panel title="Admin account" className="mt-6">
-        {admins > 0 ? (
+        {!open ? (
           <p className="text-muted">
             Setup is complete. <Link href="/auth/login" className="text-bright underline">Sign in</Link> instead.
           </p>

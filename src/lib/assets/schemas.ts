@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/zod";
 
 export const ASSET_TYPES = ["model", "texture", "decal", "sprite", "ui", "audio", "skybox", "animation", "pack"] as const;
 export type AssetType = (typeof ASSET_TYPES)[number];

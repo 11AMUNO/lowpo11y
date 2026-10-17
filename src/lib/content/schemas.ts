@@ -2,7 +2,7 @@
  * Shaders & Code, starter projects, the Learn directory and external
  * resources: input validation and the taxonomies the plan specifies.
  */
-import { z } from "zod";
+import { z } from "@/lib/zod";
 
 export const ENGINES = [
   { id: "godot", label: "Godot" },

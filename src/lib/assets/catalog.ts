@@ -2,7 +2,7 @@
  * Public catalogue queries. Always run under the public (or user) RLS context,
  * so unpublished rows are invisible even if a query is wrong.
  */
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import type { Queryable } from "@/lib/db";
 import { ASSET_TYPES, type AssetType } from "./schemas";
 

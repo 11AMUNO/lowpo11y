@@ -28,3 +28,15 @@ export async function staffRequest(request: Request, opts: { adminOnly?: boolean
     log: (action, targetType, targetId, details = {}) => withDb(SERVICE, (q) => audit(q, user.id, action, targetType, targetId, details)),
   };
 }
+
+/**
+ * Editors change drafts and items in review only; a published or archived
+ * asset's files, derivatives and uploads are admin work. RLS enforces the
+ * same rule; this check runs first so nothing touches storage before the
+ * database would refuse.
+ */
+export async function assertAssetEditable(s: Pick<StaffRequest, "user" | "db">, assetId: string): Promise<void> {
+  if (s.user.role === "admin") return;
+  const [a] = await s.db((q) => q.query<{ status: string }>("select status from assets where id = $1 and deleted_at is null", [assetId]));
+  if (a && a.status !== "draft" && a.status !== "review") throw forbidden("Only admins can change a published or archived asset. Ask an admin to move it back to draft first.");
+}

@@ -1,3 +1,4 @@
+import { assertAssetEditable } from "@/lib/admin-api";
 import { audit } from "@/lib/audit";
 import { createUploadSchema, createUploadSession, UploadError } from "@/lib/assets/uploads";
 import { hitRateLimit } from "@/lib/auth/rate-limit";
@@ -16,6 +17,7 @@ export const POST = route(async (request: Request) => {
   const rl = await withDb(SERVICE, (q) => hitRateLimit(q, `sign:${user.id}`, 300, 10 * 60));
   if (!rl.ok) throw new HttpError(429, "Too many uploads started. Wait a few minutes.", "rate_limited");
   const input = createUploadSchema.parse(await readJson(request));
+  await assertAssetEditable({ user, db: (fn) => withDb(contextFor(user), fn) }, input.assetId);
   try {
     const result = await createUploadSession(txFor(contextFor(user)), getStorage(), user.id, input, env().MAX_UPLOAD_BYTES);
     await withDb(SERVICE, (q) => audit(q, user.id, "upload.start", "asset", input.assetId, { filename: input.filename, purpose: input.purpose, size: input.size }));

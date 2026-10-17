@@ -23,6 +23,13 @@ export async function hitRateLimit(q: Queryable, bucket: string, limit: number, 
   return { ok: hits <= limit, remaining: Math.max(0, limit - hits), retryAfterSeconds };
 }
 
+/** The current window's count without adding to it. */
+export async function peekRateLimit(q: Queryable, bucket: string, windowSeconds: number, now = new Date()): Promise<number> {
+  const windowStart = new Date(Math.floor(now.getTime() / (windowSeconds * 1000)) * windowSeconds * 1000);
+  const [row] = await q.query<{ hits: number }>("select hits from rate_limits where bucket = $1 and window_start = $2", [bucket, windowStart]);
+  return row?.hits ?? 0;
+}
+
 /** Housekeeping: drop windows older than a day. */
 export async function pruneRateLimits(q: Queryable, now = new Date()): Promise<void> {
   await q.query("delete from rate_limits where window_start < $1", [new Date(now.getTime() - 86_400_000)]);
