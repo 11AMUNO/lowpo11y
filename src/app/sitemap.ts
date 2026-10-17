@@ -14,6 +14,8 @@ const STATIC_ROUTES = [
   "/textures",
   "/collections",
   "/tools",
+  "/workshop",
+  "/scene-builder",
   "/shaders",
   "/starter-projects",
   "/learn",

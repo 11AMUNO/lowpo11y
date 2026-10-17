@@ -17,8 +17,8 @@ _Last updated: 2026-10-17_
 | M05 Advanced tools | ✅ Done | 216 unit/integration tests locally (CI adds the Postgres 16 + S3 runs); 124 E2E incl. journeys 5–7, axe and phone/desktop layout checks on all eight tools |
 | M06 Resources & curated video directory | ✅ Done | 331 unit/integration tests locally on PGlite + Postgres 16; 149 E2E incl. shader compile/render, starter upload → download, creator → video → unpublish, axe on 6 new public + 8 new admin pages |
 | M07 Asset Workshop | ✅ Done | 354 unit/integration tests locally on PGlite + Postgres 16; 157 E2E incl. journey 8 (exports byte-identical to the core in Node, reproducible ZIP), axe and phone/desktop layout on /workshop |
-| M08 Scene Builder alpha | ⏳ Next | — |
-| M09 Stabilisation & deploy | ⬜ Not started | — |
+| M08 Scene Builder alpha | ✅ Done | 375 unit/integration tests locally on PGlite + Postgres 16; 163 E2E incl. journey 9 (ten library models, save → open → save byte-identical, GLB read back in Node and passing the Khronos validator, bad files, refresh recovery, 1,000-object stress scene), axe and phone/desktop layout |
+| M09 Stabilisation & deploy | ⏳ Next | — |
 
 ## M00 — Discovery and setup
 
@@ -581,6 +581,99 @@ privacy page now describes exactly what the Workshop stores.
 - No cloud sync of recipes (the site has no visitor accounts).
 - Model inputs aren't supported yet (no model transformation steps exist).
 
+## M08 — Scene Builder alpha
+
+**Built** (`/scene-builder`, ADR 0011; in the header, footer and home page)
+- **Viewport**: perspective orbit with arrow-key / Page Up / Page Down fly
+  (Shift faster), orthographic top, front and side views (1–4), focus on
+  the selection (F), grid that follows the move snap, axis helper, click
+  and Shift/Ctrl-click picking. Locked objects can't be picked or moved.
+- **Assets**: a searchable palette of published library models (GLB) and
+  textures, blockout box, plane and cylinder, and local GLB / glTF files and
+  images. Drag onto the floor (raycast, snapped) or Add at the centre of the
+  view; several files land in a grid. Local files are checked before
+  loading (FBX, OBJ, .blend and other formats get conversion guidance; size,
+  external files, Draco/meshopt/KTX2, triangle limit and warning), kept in
+  this browser by SHA-256, and relinked when a missing one is added again.
+  Missing or failed models show a wire box, a reason and what to do.
+- **Editing**: move / rotate / scale gizmo (W/E/R) with grid, angle and
+  scale snaps; numeric position, rotation and scale; snap-to-grid and reset;
+  duplicate, copy/paste, delete, group, ungroup, parent / unparent, rename,
+  hide and lock (also through parents); every edit is one labelled undo step
+  (200 steps; slider drags and number scrubs fold into one). Shortcuts are
+  listed in a dialog (?).
+- **Materials**: blockout colour, roughness, library or local texture, UV
+  repeat and offset, crisp (nearest) texels; cylinder sides.
+- **Scene**: background, ambient and sun colour and strength, sun direction
+  and height, shadows (off by default, with a performance note), fog, four
+  lighting presets (Neutral studio, Moody industrial, Night fog, Overcast
+  day).
+- **Retro preview**: 224p–480p internal resolution with nearest upscaling,
+  2–64 colour levels per channel with ordered dithering, PS1-style vertex
+  snapping, and a split view against the clean render. Viewport only.
+- **Files**: Save downloads `{name}.retro-scene.json` (versioned, asset
+  manifest with library ids and licences or local names and checksums,
+  canonical so the same scene saves to the same bytes); Open validates,
+  repairs and lists what it changed, refuses other files and newer versions;
+  New and Open are undoable. Autosave to this browser after each edit, with
+  a restore banner on the next visit.
+- **Export GLB**: hidden objects and the sun optional; the file is loaded
+  back and mesh counts compared; the dialog lists what glTF can't carry.
+- **Status bar**: objects, triangles, draw calls, fps, missing models, the
+  last action, autosave state; a warning above 1 million triangles.
+- On screens under 900 px a notice comes first, with "Open anyway".
+- The sitemap now lists `/workshop` (missed in M07) and `/scene-builder`.
+
+**Verified**
+- Unit: scene files round-trip with identical transforms and identical
+  bytes; repairs (duplicate ids, orphans, loops, missing assets) with notes;
+  refusals and clamping; grouping, reparenting and ungrouping keep world
+  positions; refusing to put an object inside itself; duplicates with
+  children and unique names (also several at once); copy/paste with assets;
+  subtree delete, reorder, effective hidden/locked; asset de-duplication;
+  snapping; undo/redo, labels, merge keys; model file checks.
+- Integration (PGlite and Postgres 16): the palette lists only published
+  models with a published, copied GLB, prefers the primary file, filters by
+  title or slug.
+- E2E **journey 9**: the ten demo library models placed and moved apart
+  through the inspector, all loaded (552 triangles); rotate and scale by
+  number; pick in the viewport; drag the gizmo in the top view and undo it;
+  W/E/R; delete and undo (same position), duplicate, group; save → the file
+  holds the exact transforms → New → open → save again is byte-identical;
+  export → "Exported and checked", the GLB read in Node has every model by
+  name, the same triangle count and the sun, and the Khronos glTF validator
+  reports no errors or warnings. Bad files (FBX, broken GLB, text, invalid
+  JSON, newer format) each get their reason and nothing breaks; a scene
+  missing a local file shows the placeholder and remediation and relinks
+  when the file is added. A local model and a box survive a reload through
+  the restore banner. Library texture on a box, UV repeat, drag a plane in
+  from the palette, retro on; axe on the editor, the shortcuts and export
+  dialogs and the phone notice; phone layout without sideways scrolling,
+  desktop page never scrolls. Header navigation reaches Scene Builder.
+- **Stress** (headless Chromium, software WebGL, so a floor rather than a
+  real GPU): 1,000 objects (500 library models, 500 boxes; 33,600 triangles)
+  open in about 4–5 s at 11–12 fps with 1,401 draw calls; select all,
+  delete and undo in about 4 s. Locally with the owner's 72 converted Tripo
+  models (not in CI): all 72 pass the checks and load in 4.7 s (80,261
+  triangles); duplicated to 288 objects (321,044 triangles, 289 draw calls)
+  at 14–15 fps, 104 MB JS heap, no errors.
+
+**Bugs found and fixed**: re-saving an opened scene changed key order (the
+file is now canonical); duplicating "Bed" and "Bed 2" together named both
+"Bed 3"; several dropped files lined up in a 72 m row; the draw-call count
+included editor overlays; the exported sun's direction could be lost (now
+aimed down its node's −Z as glTF expects); `THREE.Clock` deprecation.
+
+**Known limitations**
+- No instancing: each object is its own draw call; no LOD.
+- Blender and Godot imports weren't run here (neither is installed); the
+  validator result above is the evidence until the owner checks both.
+- Animations and skins show in their rest pose; no vertex paint, decals,
+  prefabs or modular snapping (later features in the plan).
+- Copy/paste works within one tab; no cloud save (no visitor accounts).
+- Touch works for orbit and selection, but precise editing needs a mouse
+  and keyboard.
+
 ## Owner deliveries (2026-10-16)
 
 | Item | Contents | Status |
@@ -607,3 +700,4 @@ See `docs/decisions/`.
 | Godot test of the two draft Godot shaders | Publishing them | Drafts; the three.js PSX material is published locally |
 | Review of the eleven draft resource links and licence notes | Publishing them | Drafts with "written from memory" review notes |
 | Creators and videos to list | Learn | Empty state; the admin is ready |
+| Open a Scene Builder GLB export in Blender and Godot | Confirming the acceptance check in real engines | Khronos glTF validator: no errors or warnings |

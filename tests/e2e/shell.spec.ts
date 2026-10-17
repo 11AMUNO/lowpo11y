@@ -18,6 +18,7 @@ test.describe("public shell", () => {
       ["Shaders & Code", "/shaders", "Shaders & Code"],
       ["Learn", "/learn", "Learn"],
       ["Resources", "/resources", "Resources"],
+      ["Scene Builder", "/scene-builder", "Scene Builder"],
     ] as const) {
       await nav.getByRole("link", { name: label, exact: true }).click();
       await expect(page).toHaveURL(new RegExp(`${path}$`));

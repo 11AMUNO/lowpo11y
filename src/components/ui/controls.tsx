@@ -152,6 +152,8 @@ export interface NumberFieldProps {
   hint?: ReactNode;
   disabled?: boolean;
   className?: string;
+  /** Classes for the input box (default width w-24). */
+  boxClassName?: string;
   id?: string;
 }
 
@@ -159,7 +161,7 @@ export interface NumberFieldProps {
  * Numeric control: type a value, use arrow keys (Shift = ×10), or drag
  * horizontally on the label to scrub.
  */
-export function NumberField({ label, value, onChange, min = -Infinity, max = Infinity, step = 1, unit, hint, disabled, className, id }: NumberFieldProps) {
+export function NumberField({ label, value, onChange, min = -Infinity, max = Infinity, step = 1, unit, hint, disabled, className, boxClassName, id }: NumberFieldProps) {
   const autoId = useId();
   const inputId = id ?? `n${autoId}`;
   // While focused the user's text is kept verbatim; otherwise the prop value is shown.
@@ -220,7 +222,7 @@ export function NumberField({ label, value, onChange, min = -Infinity, max = Inf
         >
           {label}
         </label>
-        <div className="flex h-8 w-24 items-center border border-edge-strong bg-sunken focus-within:border-bright focus-within:shadow-[var(--crt-glow)] hover:border-edge-hover">
+        <div className={cn("flex h-8 w-24 items-center border border-edge-strong bg-sunken focus-within:border-bright focus-within:shadow-[var(--crt-glow)] hover:border-edge-hover", boxClassName)}>
           <input
             id={inputId}
             type="text"

@@ -125,6 +125,9 @@ export default async function HomePage() {
               <Link href="/workshop" className={buttonClasses("secondary", "md")}>
                 Workshop
               </Link>
+              <Link href="/scene-builder" className={buttonClasses("secondary", "md")}>
+                Scene Builder
+              </Link>
             </div>
           </Panel>
 

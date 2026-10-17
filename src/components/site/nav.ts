@@ -12,7 +12,7 @@ export const PRIMARY_NAV: NavItem[] = [
   { label: "Shaders & Code", href: "/shaders", description: "Engine shaders and starter projects" },
   { label: "Learn", href: "/learn", description: "Hand-picked tutorials and creators" },
   { label: "Resources", href: "/resources", description: "Vetted external tools and references" },
-  // Scene Builder joins the navigation when its page ships (M08); until then there is nothing to link to.
+  { label: "Scene Builder", href: "/scene-builder", description: "Block out a level with library models and export one GLB" },
 ];
 
 export const FOOTER_NAV: { heading: string; items: { label: string; href: string }[] }[] = [
@@ -31,6 +31,7 @@ export const FOOTER_NAV: { heading: string; items: { label: string; href: string
     items: [
       { label: "Tools", href: "/tools" },
       { label: "Workshop", href: "/workshop" },
+      { label: "Scene Builder", href: "/scene-builder" },
     ],
   },
   {

@@ -156,6 +156,20 @@ Publishing is guarded in the database (ADR 0009). Admin routes live under
 
 See ADR 0010.
 
+## Scene Builder
+
+| Path | Purpose |
+|---|---|
+| `src/lib/scene/schema.ts` | The versioned `.retro-scene.json` format: nodes (stable UUIDs, parent links, transforms, primitives, materials), the asset manifest, scene settings; validating and repairing loader; canonical serialiser |
+| `src/lib/scene/editor.ts` | Pure edits returning a new document (add, remove, duplicate, reparent, group, ungroup, reorder, copy/paste, snapping) that keep world transforms; snapshot undo/redo with labels and merge keys |
+| `src/lib/scene/{model-check,presets,library}.ts` | Checks on model files before loading (format guidance, size, extensions, external files, triangle budget); lighting presets; published GLB models for the palette |
+| `src/features/scene-builder/runtime.ts` | three.js view, loaded on demand: mirrors the document into Groups, shared reference-counted model templates, primitives, placeholders, gizmo, cameras, picking, fly keys, retro pass, stats, GLB export with a re-import check, disposal |
+| `src/features/scene-builder/scene-builder.tsx` | The `/scene-builder` page: history, selection, asset resolution (library download route, memory, IndexedDB), drops, file open/save, autosave and recovery, shortcuts, export dialog |
+| `src/features/scene-builder/{asset-palette,hierarchy,inspector,storage}.tsx?` | Asset palette (library models and textures, blockout shapes, local files), the object tree, the object and scene inspectors, browser storage |
+| `src/app/api/scene/library` | Published models (GLB) or textures for the palette |
+
+See ADR 0011.
+
 ## Environments
 
 | | Database | Storage | Data dir |
