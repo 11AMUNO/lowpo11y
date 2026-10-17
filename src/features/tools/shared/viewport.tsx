@@ -48,7 +48,8 @@ export function Viewport({ result, source, hasItem, state, onChange, label, read
       }
       const ctx = cv.getContext("2d")!;
       ctx.clearRect(0, 0, W, H);
-      if (!result || !source) return;
+      // a closed (detached) bitmap reports 0×0: a resize can fire after it was replaced
+      if (!result || !source || !result.width || !source.width) return;
       ctx.imageSmoothingEnabled = !state.pixelated;
       ctx.imageSmoothingQuality = "high";
       if (state.view === "split") {

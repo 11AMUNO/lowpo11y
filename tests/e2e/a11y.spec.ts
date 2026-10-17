@@ -12,6 +12,7 @@ const PAGES = [
   "/tools/texture-atlas",
   "/tools/model-inspector",
   "/tools/bitmap-font",
+  "/tools/decal",
   "/assets",
   "/assets?view=list&type=model",
   "/textures",
@@ -115,6 +116,16 @@ test("bitmap font generator with a font loaded has no WCAG A/AA violations", asy
   await page.getByRole("button", { name: "Drop shadow" }).click();
   await page.getByText("Licence in the font").click();
   await page.getByRole("img", { name: /^Sample text drawn/ }).click({ position: { x: 20, y: 16 } });
+  const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).exclude('[aria-hidden="true"]').analyze();
+  expect(results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
+});
+
+test("decal maker with an image keyed has no WCAG A/AA violations", async ({ page }) => {
+  await page.goto("/tools/decal");
+  await page.getByRole("button", { name: "+ Green screen" }).click();
+  await expect(page.getByRole("list", { name: "Key colours" })).toContainText("#", { timeout: 20_000 });
+  await page.getByRole("button", { name: "Look", exact: true }).click();
+  await page.getByRole("button", { name: "Erase", exact: true }).click();
   const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).exclude('[aria-hidden="true"]').analyze();
   expect(results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
 });

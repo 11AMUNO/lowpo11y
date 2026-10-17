@@ -95,12 +95,12 @@ export const TOOLS: ToolDefinition[] = [
   {
     slug: "decal",
     name: "Decal and cutout maker",
-    summary: "Key out a background by colour or brightness, refine the edge, and save a transparent PNG decal.",
+    summary: "Key out a background by colour or brightness, clean the edges with no dark or green fringe, brush and weather it, preview it on a wall, and save a transparent PNG.",
     route: "/tools/decal",
     category: "texture",
-    status: "in-development",
+    status: "available",
     processing: "local",
-    version: "0.0.0",
+    version: "1.0.0",
   },
 ];
 

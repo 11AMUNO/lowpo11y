@@ -14,8 +14,8 @@ _Last updated: 2026-10-17_
 | M02 Infrastructure (DB, RLS, auth, storage, uploads) | ✅ Done | 143 unit/integration tests (RLS on PGlite + Postgres 16; storage contract on local + S3); 35 E2E incl. journey 10 |
 | M03 Asset CMS + catalogue | ✅ Done | 221 unit/integration tests (PGlite + Postgres 16 + S3); 67 E2E incl. journeys 1–3 and axe on 10 public + 8 admin pages |
 | M04 Initial processing tools | ✅ Done | 168 unit/integration tests locally (CI repeats the DB and storage suites on Postgres 16 + S3); 89 E2E incl. journey 4, Seamless byte-identical to the original (232 comparisons), axe on all three tools |
-| M05 Advanced tools | ⏳ Next | — |
-| M06 Resources & curated video directory | ⬜ Not started | — |
+| M05 Advanced tools | ✅ Done | 216 unit/integration tests locally (CI adds the Postgres 16 + S3 runs); 124 E2E incl. journeys 5–7, axe and phone/desktop layout checks on all eight tools |
+| M06 Resources & curated video directory | ⏳ Next | — |
 | M07 Asset Workshop | ⬜ Not started | — |
 | M08 Scene Builder alpha | ⬜ Not started | — |
 | M09 Stabilisation & deploy | ⬜ Not started | — |
@@ -319,6 +319,105 @@ context); a test helper that ran one assertion per pixel made a test take
 - "Copy/share recipe" from the plan's tool checklist isn't built yet:
   settings are remembered per browser but can't be exported. Planned with
   Workshop presets (M07).
+
+## M05 — Advanced tools
+
+All eight tools in the registry are now available: Seamless, the retro
+converter, the batch resizer, and the five below. Each runs locally in the
+browser, keeps settings (never images) in the browser, and has a CC0 sample.
+
+**Built**
+- **Palette generator** (`/tools/palette`): extract 4–256 colours (median
+  cut refined by k-means in OKLab) with locked colours kept exactly; list
+  and inspector (hex, RGB, name, reorder, duplicate, remove); OKLCh
+  harmonies; colour-vision simulation (Machado 2009) with confusable pairs,
+  also applied to the preview; preview of an image in the palette with
+  dithering and PNG download; GPL, HEX, LOWPO11Y JSON and PNG swatch import
+  and export; eight original starter palettes (none presented as an
+  official hardware palette); undo; the palette is remembered.
+- **Texture atlas builder** (`/tools/texture-atlas`): tiles from files,
+  folders or drops; rename, reorder, rotate, trim, fill; optional resize to
+  one tile size; MaxRects (optional 90° rotation) or grid packing; padding,
+  border and edge extrusion; auto (tight, square, power of two) or manual
+  size with overflow reported; UVs for a top-left or bottom-left origin
+  with Blender/Godot/Unity presets and optional half-texel inset; PNG,
+  JSON, CSV or ZIP; filtering and mipmap notes.
+- **Model inspector** (`/tools/model-inspector`): .glb, or .gltf with its
+  .bin and textures; statistics from the file (scene vs unique triangles,
+  estimated and measured draw calls, materials, textures, skins, morphs,
+  animations, UVs, normals, size); shaded/unlit/wire/normals, flat shading,
+  grid, axes, bounds, backgrounds and lights; clip play/pause/scrub;
+  screenshot; report JSON; checks for NPOT and oversized textures, missing
+  normals, scale and draw calls; Draco/meshopt/KTX2 files explained instead
+  of crashing; GPU resources freed on every unload, with live counts.
+- **Bitmap font generator** (`/tools/bitmap-font`): reads TTF/OTF cmaps,
+  names, embedded licence text and embedding permissions; character presets,
+  typed characters and U+ ranges with missing glyphs listed; 1-bit or
+  smooth edges, outline and shadow (exact pixel dilation in 1-bit mode),
+  spacing, line height, padding, kerning from the browser's shaping;
+  multi-page output; AngelCode BMFont text and JSON; the preview is drawn
+  from the generated files by LOWPO11Y's BMFont renderer. Sample font:
+  "LOWPO11Y Pixel", a 5×7 font drawn for the project (CC0).
+- **Decal and cutout maker** (`/tools/decal`): rotate, flip, crop and trim
+  to subject; key by colour (OKLab distance, several colours, background
+  guessed from the corners, pick from the image) or brightness; edge
+  clean-up that re-measures edge alpha and unmixes the background colour
+  using local foreground/background estimates; grow/shrink, despeckle,
+  feather; erase/restore brush; tint, adjustments, seeded grime and edge
+  wear; output sizes and power-of-two padding; colour bleed into
+  transparent pixels; previews on checker, black, white, four wall
+  textures and a lit 3D wall; PNG and mask export. No AI subject
+  detection is claimed or used.
+- Shared: `remapImage` (the palette/dither step, moved out of the
+  converter with its output proven unchanged), GLB writer support for
+  skins and animations, new CC0 samples in `public/demo/{models,fonts,decals}`.
+
+**Verified**
+- Unit: OKLab round trips; extraction determinism, dominant colours and
+  lock handling; palette files round trip (including through real PNGs);
+  atlas packing over random tile sets in every mode (no overlaps, exact
+  pixels, UVs, POT/square, determinism, extrusion, padding, rotation,
+  overflow, tampering caught by the validator); the rigged sample loads in
+  three.js and its clip deforms the mesh; font writer/reader (checksums,
+  cmap, names); BMFont round trips and renderer; charsets; decal keying,
+  fringe removal measured against no clean-up, bleed, edge-touching
+  subjects, strokes, morphology, background guess.
+- E2E **journey 5**: four tiles edited and packed with rotation, extrusion
+  and Godot UVs, exported as a ZIP and validated in Node against the
+  expected tiles. **Journey 6**: rigged GLB stats and clips, play/pause/
+  scrub, display modes, screenshot and report, ten loads with GPU counts
+  returning exactly (a disposal mutation fails it); damaged, Draco-only and
+  multi-file .gltf input. **Journey 7**: the exported .fnt + PNG render the
+  sample in Node byte-identical to the preview; glyph boxes and advances
+  equal the browser drawing the same font; multi-page output. Palette:
+  browser extraction equals the core; every format exported and re-imported
+  gives the same colours. Decal: exports equal the core byte for byte, no
+  green or dark fringe, brush erase and undo, pick, POT output. axe WCAG
+  2.2 AA on every tool page, empty and loaded; phone and desktop layout
+  checks.
+
+**Bugs found and fixed**: the converter's palette step needed extracting
+before reuse (done with a before/after output fingerprint); the atlas re-encoded
+its PNG on every change, so layout now comes first and the PNG after; the
+catalogue's upload checks listed KHR_texture_basisu as viewable; scrollable
+previews and lists weren't keyboard-focusable; the first decal edge clean-up
+left green and dark fringes (replaced by projection against local
+foreground/background estimates), and matte erosion ate subjects touching
+the image edge; canvases could draw an image bitmap that had just been
+replaced (guarded in the shared viewport, atlas and decal canvases); the
+command palette ranked a tool whose description mentions "licensed" above the
+Licences page.
+
+**Known limitations**
+- Palette: no ASE export (the plan asks for it only if it can be verified
+  against Adobe apps).
+- Atlas: per-tile crop is "trim transparent edges" only; no free-form crop.
+- Model inspector: Draco, meshopt and KTX2/Basis aren't decoded (decoders
+  aren't shipped); morph targets are counted but have no playback controls.
+- Bitmap font: kerning comes from the browser's text shaping, not by
+  reading kern/GPOS tables; WOFF and .ttc aren't accepted; compatibility is
+  claimed only for the BMFont format as read by our renderer; no SDF/MSDF.
+- Decal: crop is numeric (no drag handles) and rotation is in 90° steps.
 
 ## Owner deliveries (2026-10-16)
 

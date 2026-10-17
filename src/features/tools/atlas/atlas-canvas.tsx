@@ -48,7 +48,8 @@ export function AtlasCanvas({ bitmap, width, height, frames, extrude, selected, 
       }
       const ctx = cv.getContext("2d")!;
       ctx.clearRect(0, 0, W, H);
-      if (!bitmap) return;
+      // a closed (detached) bitmap reports 0×0: a resize can fire after it was replaced
+      if (!bitmap || !bitmap.width) return;
       const pad = 16 * dpr;
       const fit = Math.min((W - pad * 2) / width, (H - pad * 2) / height);
       // whole-pixel scales when enlarging keep texels square

@@ -5,9 +5,8 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { Kbd } from "@/components/ui/kbd";
 import { cn } from "@/lib/cn";
-import { TOOLS } from "@/features/tools/registry";
 import type { SearchResult } from "@/lib/search/types";
-import { FOOTER_NAV, PRIMARY_NAV } from "./nav";
+import { buildStaticIndex, searchStatic } from "./search-index";
 
 const KIND_LABEL: Record<SearchResult["kind"], string> = {
   page: "PAGE",
@@ -21,31 +20,7 @@ const KIND_LABEL: Record<SearchResult["kind"], string> = {
   creator: "CREATOR",
 };
 
-function buildStaticIndex(): SearchResult[] {
-  const pages = new Map<string, SearchResult>();
-  for (const n of PRIMARY_NAV) pages.set(n.href, { id: `page:${n.href}`, kind: "page", title: n.label, subtitle: n.description, href: n.href });
-  for (const group of FOOTER_NAV)
-    for (const n of group.items) if (!pages.has(n.href)) pages.set(n.href, { id: `page:${n.href}`, kind: "page", title: n.label, href: n.href });
-  const tools: SearchResult[] = TOOLS.filter((t) => t.status === "available").map((t) => ({
-    id: `tool:${t.slug}`,
-    kind: "tool",
-    title: t.name,
-    subtitle: t.summary,
-    href: t.route,
-  }));
-  return [...tools, ...pages.values()];
-}
-
 const STATIC_INDEX = buildStaticIndex();
-
-function matchesQuery(r: SearchResult, q: string) {
-  const hay = `${r.title} ${r.subtitle ?? ""}`.toLowerCase();
-  return q
-    .toLowerCase()
-    .split(/\s+/)
-    .filter(Boolean)
-    .every((word) => hay.includes(word));
-}
 
 export function SearchCommand({ className }: { className?: string }) {
   const [open, setOpen] = useState(false);
@@ -95,7 +70,7 @@ export function SearchCommand({ className }: { className?: string }) {
 
   const results = useMemo(() => {
     const q = query.trim();
-    const local = q ? STATIC_INDEX.filter((r) => matchesQuery(r, q)) : STATIC_INDEX.filter((r) => r.kind === "page").slice(0, 7);
+    const local = q ? searchStatic(STATIC_INDEX, q) : STATIC_INDEX.filter((r) => r.kind === "page").slice(0, 7);
     // Only show catalogue results that belong to the current query.
     const catalogue = q.length >= 2 && remote.q === q ? remote.results : [];
     const seen = new Set<string>();

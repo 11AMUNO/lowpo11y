@@ -7,6 +7,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
+import { greenScreenSign, tagOnBlack } from "@/lib/demo/decals";
 import { DEMO_MODELS } from "@/lib/demo/models";
 import { buildPixelFont } from "@/lib/demo/pixel-font";
 import { buildRiggedPole } from "@/lib/demo/rigged";
@@ -40,6 +41,11 @@ async function main() {
   await mkdir(path.join(OUT, "fonts"), { recursive: true });
   await writeFile(path.join(OUT, "fonts", "lowpo11y-pixel.ttf"), buildPixelFont());
   console.log("font lowpo11y-pixel.ttf");
+  // sources for the decal tool
+  await mkdir(path.join(OUT, "decals"), { recursive: true });
+  await writeFile(path.join(OUT, "decals", "demo-sign-greenscreen.png"), await encodePng(greenScreenSign()));
+  await writeFile(path.join(OUT, "decals", "demo-tag-on-black.png"), await encodePng(tagOnBlack()));
+  console.log("decals demo-sign-greenscreen.png, demo-tag-on-black.png");
 }
 
 main().catch((err) => {
