@@ -10,6 +10,7 @@ const PAGES = [
   "/tools/resizer",
   "/tools/palette",
   "/tools/texture-atlas",
+  "/tools/model-inspector",
   "/assets",
   "/assets?view=list&type=model",
   "/textures",
@@ -94,6 +95,14 @@ test("texture atlas builder with tiles loaded has no WCAG A/AA violations", asyn
   await page.getByRole("button", { name: "Fill transparency" }).click();
   await page.getByRole("button", { name: "Resize all" }).click();
   await page.getByRole("button", { name: "Manual", exact: true }).click();
+  const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).exclude('[aria-hidden="true"]').analyze();
+  expect(results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
+});
+
+test("model inspector with an animated model loaded has no WCAG A/AA violations", async ({ page }) => {
+  await page.goto("/tools/model-inspector");
+  await page.getByRole("button", { name: "+ Rigged pole" }).click();
+  await expect(page.getByRole("region", { name: "Animations" })).toBeVisible({ timeout: 20_000 });
   const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).exclude('[aria-hidden="true"]').analyze();
   expect(results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
 });

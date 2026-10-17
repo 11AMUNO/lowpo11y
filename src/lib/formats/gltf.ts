@@ -173,7 +173,10 @@ export interface GltfStats {
   unsupportedExtensions: string[];
 }
 
-/** Extensions three.js loads out of the box in our viewers (no external decoders). */
+/**
+ * Extensions three.js loads out of the box in our viewers (no external
+ * decoders). Draco, meshopt and KTX2/Basis need decoders we don't ship.
+ */
 export const SUPPORTED_EXTENSIONS = new Set([
   "KHR_materials_unlit",
   "KHR_texture_transform",
@@ -186,7 +189,6 @@ export const SUPPORTED_EXTENSIONS = new Set([
   "KHR_materials_clearcoat",
   "KHR_materials_sheen",
   "KHR_lights_punctual",
-  "KHR_texture_basisu",
   "EXT_texture_webp",
 ]);
 

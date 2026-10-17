@@ -75,12 +75,12 @@ export const TOOLS: ToolDefinition[] = [
   {
     slug: "model-inspector",
     name: "Model inspector",
-    summary: "Open a GLB or glTF to check triangles, materials, texture sizes, UVs and animations — nothing is uploaded.",
+    summary: "Open a GLB or glTF to check triangles, draw calls, materials, texture sizes, UVs, skins and animations, with wireframe and normals views. Nothing is uploaded.",
     route: "/tools/model-inspector",
     category: "model",
-    status: "in-development",
+    status: "available",
     processing: "local",
-    version: "0.0.0",
+    version: "1.0.0",
   },
   {
     slug: "bitmap-font",

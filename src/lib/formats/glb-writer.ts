@@ -1,5 +1,6 @@
 /**
- * Minimal, dependency-free glTF 2.0 binary (GLB) writer for static meshes.
+ * Minimal, dependency-free glTF 2.0 binary (GLB) writer: meshes, materials,
+ * embedded images, node hierarchies, and optionally skins and animations.
  * Used for generated demo props, server-side conversions and tests.
  * Spec: https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html
  */
@@ -12,6 +13,10 @@ export interface PrimitiveInput {
   colors?: Float32Array;
   indices?: Uint16Array | Uint32Array;
   material?: number;
+  /** Skinning: 4 joint indices per vertex (into the skin's `joints`). */
+  joints?: Uint16Array;
+  /** Skinning: 4 weights per vertex, summing to 1. */
+  weights?: Float32Array;
 }
 
 export interface MeshInput {
@@ -50,6 +55,32 @@ export interface NodeInput {
   scale?: [number, number, number];
   children?: number[];
   extras?: Record<string, unknown>;
+  /** Index into `skins` for a skinned mesh node. */
+  skin?: number;
+}
+
+export interface SkinInput {
+  name?: string;
+  /** Node indices of the joints. */
+  joints: number[];
+  /** One column-major 4×4 matrix per joint. */
+  inverseBindMatrices: Float32Array;
+  skeleton?: number;
+}
+
+export interface AnimationChannelInput {
+  node: number;
+  path: "translation" | "rotation" | "scale";
+  /** Keyframe times in seconds, ascending. */
+  times: Float32Array;
+  /** 3 values per key for translation/scale, 4 (x, y, z, w) for rotation. */
+  values: Float32Array;
+  interpolation?: "LINEAR" | "STEP";
+}
+
+export interface AnimationInput {
+  name?: string;
+  channels: AnimationChannelInput[];
 }
 
 export interface SceneInput {
@@ -62,6 +93,8 @@ export interface SceneInput {
   generator?: string;
   copyright?: string;
   extras?: Record<string, unknown>;
+  skins?: SkinInput[];
+  animations?: AnimationInput[];
 }
 
 const ARRAY_BUFFER = 34962;
@@ -91,10 +124,11 @@ export function writeGlb(scene: SceneInput): Uint8Array {
   };
   const bytesOf = (a: ArrayBufferView) => new Uint8Array(a.buffer, a.byteOffset, a.byteLength);
 
-  const addFloatAccessor = (data: Float32Array, size: 2 | 3 | 4, withBounds = false) => {
-    const view = addView(bytesOf(data), ARRAY_BUFFER);
+  const addFloatAccessor = (data: Float32Array, size: 1 | 2 | 3 | 4 | 16, withBounds = false, target: number | undefined = ARRAY_BUFFER) => {
+    const view = addView(bytesOf(data), target);
     const count = data.length / size;
-    const acc: Record<string, unknown> = { bufferView: view, componentType: FLOAT, count, type: size === 2 ? "VEC2" : size === 3 ? "VEC3" : "VEC4" };
+    const type = size === 1 ? "SCALAR" : size === 2 ? "VEC2" : size === 3 ? "VEC3" : size === 4 ? "VEC4" : "MAT4";
+    const acc: Record<string, unknown> = { bufferView: view, componentType: FLOAT, count, type };
     if (withBounds) {
       const min = new Array<number>(size).fill(Infinity);
       const max = new Array<number>(size).fill(-Infinity);
@@ -118,6 +152,12 @@ export function writeGlb(scene: SceneInput): Uint8Array {
       if (p.normals) attributes.NORMAL = addFloatAccessor(p.normals, 3);
       if (p.uvs) attributes.TEXCOORD_0 = addFloatAccessor(p.uvs, 2);
       if (p.colors) attributes.COLOR_0 = addFloatAccessor(p.colors, 4);
+      if (p.joints && p.weights) {
+        const view = addView(bytesOf(p.joints), ARRAY_BUFFER);
+        accessors.push({ bufferView: view, componentType: UNSIGNED_SHORT, count: p.joints.length / 4, type: "VEC4" });
+        attributes.JOINTS_0 = accessors.length - 1;
+        attributes.WEIGHTS_0 = addFloatAccessor(p.weights, 4);
+      }
       const prim: Record<string, unknown> = { attributes, mode: 4 };
       if (p.indices) {
         const view = addView(bytesOf(p.indices), ELEMENT_ARRAY_BUFFER);
@@ -178,6 +218,7 @@ export function writeGlb(scene: SceneInput): Uint8Array {
       if (n.scale) out.scale = n.scale;
       if (n.children?.length) out.children = n.children;
       if (n.extras) out.extras = n.extras;
+      if (n.skin !== undefined) out.skin = n.skin;
       return out;
     }),
     meshes,
@@ -185,6 +226,25 @@ export function writeGlb(scene: SceneInput): Uint8Array {
     bufferViews,
     buffers: [{ byteLength }],
   };
+  if (scene.skins?.length)
+    json.skins = scene.skins.map((sk) => ({
+      ...(sk.name ? { name: sk.name } : {}),
+      joints: sk.joints,
+      inverseBindMatrices: addFloatAccessor(sk.inverseBindMatrices, 16, false, undefined),
+      ...(sk.skeleton !== undefined ? { skeleton: sk.skeleton } : {}),
+    }));
+  if (scene.animations?.length)
+    json.animations = scene.animations.map((a) => {
+      const animSamplers: Record<string, unknown>[] = [];
+      const channels = a.channels.map((c) => {
+        // animation inputs must carry min/max
+        animSamplers.push({ input: addFloatAccessor(c.times, 1, true, undefined), output: addFloatAccessor(c.values, c.path === "rotation" ? 4 : 3, false, undefined), interpolation: c.interpolation ?? "LINEAR" });
+        return { sampler: animSamplers.length - 1, target: { node: c.node, path: c.path } };
+      });
+      return { ...(a.name ? { name: a.name } : {}), samplers: animSamplers, channels };
+    });
+  // skins and animations appended data after the literal above was built
+  json.buffers = [{ byteLength }];
   if (materials.length) json.materials = materials;
   if (images.length) {
     json.images = images;

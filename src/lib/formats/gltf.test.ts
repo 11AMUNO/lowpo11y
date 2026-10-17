@@ -102,5 +102,7 @@ describe("malformed input", () => {
   it("flags required extensions the viewer cannot decode", () => {
     const doc = parseGltfJson(JSON.stringify({ asset: { version: "2.0" }, extensionsRequired: ["KHR_draco_mesh_compression", "KHR_materials_unlit"] }));
     expect(gltfStats(doc).unsupportedExtensions).toEqual(["KHR_draco_mesh_compression"]);
+    const ktx = parseGltfJson(JSON.stringify({ asset: { version: "2.0" }, extensionsRequired: ["KHR_texture_basisu", "KHR_texture_transform"] }));
+    expect(gltfStats(ktx).unsupportedExtensions).toEqual(["KHR_texture_basisu"]);
   });
 });
